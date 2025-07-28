@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Year 1 Book Explorer: Ages 1-2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Playful Pastels -->
+    <!-- Application Structure Plan: A single-page dashboard with tab-based navigation for each of the 12 months (12-23). This structure organizes the 120 books into manageable, thematic sections, making exploration intuitive. Clicking a book card opens a modal with a concise summary of its developmental significance, preventing UI clutter. An interactive chart provides an at-a-glance analysis of the developmental focus (e.g., Movement, Sensory, Emotional) for each month, adding a data-driven layer to the report. -->
+    <!-- Visualization & Content Choices: Report Info: Year 1 Book List (120 books) -> Goal: Organize/Explore -> Viz/Presentation: Interactive monthly tabs with a grid of book cards -> Interaction: Click tab to change month; click card for details -> Justification: Breaks down a large dataset into user-friendly chunks; modal provides deep-dive without navigation. Report Info: Book characteristics (inferred from themes/titles) -> Goal: Analyze/Compare -> Viz/Presentation: Dynamic Doughnut Chart -> Interaction: Chart updates on month selection -> Justification: Provides a quick, visual summary of each month's developmental focus. Library/Method: Chart.js for Canvas chart. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #334155;
+        }
+        .font-playfair {
+            font-family: 'Playfair Display', serif;
+        }
+        .modal {
+            transition: opacity 0.25s ease;
+        }
+        .modal-content {
+            transition: transform 0.25s ease;
+        }
+        .nav-button.active {
+            background-color: #38bdf8;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="font-playfair text-3xl sm:text-4xl md:text-5xl font-bold text-sky-800">Year 1 Book Explorer</h1>
+            <p class="text-lg sm:text-xl text-slate-600 mt-2">Interactive Guide for Ages 1-2</p>
+        </header>
+
+        <section id="introduction" class="bg-white p-6 rounded-2xl shadow-sm mb-8 max-w-4xl mx-auto">
+            <h2 class="font-playfair text-2xl font-bold text-sky-700 mb-4">A Year of Growth and Discovery</h2>
+            <div class="space-y-4 text-slate-700">
+                <p>The first year of a toddler's life is a whirlwind of development. Reading together is a powerful way to support this growth, building language, motor skills, and emotional understanding. This guide presents 120 carefully selected books, organized into monthly themes that align with your child's developmental milestones from age one to two.</p>
+                <p>Use the tabs below to navigate through each month. Click on any book to learn about its significance, and see the chart for a visual breakdown of each month's learning focus.</p>
+            </div>
+        </section>
+
+        <main>
+            <div id="month-navigation" class="flex flex-wrap justify-center gap-2 mb-8"></div>
+            
+            <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm">
+                <h3 id="month-title" class="font-playfair text-2xl sm:text-3xl font-bold text-center text-sky-700 mb-2"></h3>
+                <p id="month-theme" class="text-center text-slate-500 font-medium mb-6"></p>
+                <div id="book-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6"></div>
+            </div>
+
+            <section id="analysis" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm mt-8">
+                <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-center text-sky-700 mb-4">Developmental Focus</h2>
+                <p id="chart-intro" class="text-center text-slate-600 max-w-2xl mx-auto mb-6">This chart highlights the key developmental areas targeted by the book selection for the chosen month. See how the focus shifts from basic concepts and sensory exploration to more complex themes like emotions and routines as your child grows.</p>
+                <div class="chart-container">
+                    <canvas id="book-type-chart"></canvas>
+                </div>
+            </section>
+        </main>
+
+    </div>
+
+    <div id="book-modal" class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div class="modal-content bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl p-6 sm:p-8 overflow-y-auto transform scale-95">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h2 id="modal-title" class="font-playfair text-2xl sm:text-3xl font-bold text-sky-800"></h2>
+                    <p id="modal-author" class="text-lg text-slate-500 mb-4"></p>
+                </div>
+                <button id="close-modal" class="text-3xl text-slate-400 hover:text-sky-600 transition-colors">&times;</button>
+            </div>
+            <div id="modal-body" class="text-slate-700 space-y-4">
+                <div id="modal-summary"></div>
+                <div id="modal-significance"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const bookData = [
+            { month: 12, theme: "Peekaboo & Connection", title: "Peek-a-You!", author: "Andrea Davis Pinkney", type: "Interactive", summary: "A joyful and rhythmic celebration of peekaboo, featuring diverse and loving families.", significance: "Perfect for this age, it reinforces the concept of object permanence in a fun, interactive way while celebrating family bonds." },
+            { month: 12, theme: "Peekaboo & Connection", title: "Good Night, Baby Moon", author: "Margaret Wise Brown", type: "Classic", summary: "A gentle, lyrical text that says goodnight to the world from the perspective of a baby looking at the moon.", significance: "From a legendary author, this book's soothing rhythm makes it an ideal bedtime story, helping to establish a calm and comforting sleep routine." },
+            { month: 12, theme: "Peekaboo & Connection", title: "Farmyard Beat", author: "Lindsey Craig", type: "Rhyme", summary: "Farm animals get together for a rhyming, toe-tapping dance party.", significance: "The infectious rhythm and rhyme encourage movement and sound imitation, which are key for developing motor and language skills." },
+            { month: 12, theme: "Peekaboo & Connection", title: "Peekaboo Morning", author: "Rachel Isadora", type: "Interactive", summary: "A toddler plays peekaboo with family members throughout the morning routine.", significance: "This book turns a simple game into a narrative, helping children see themselves and their daily lives reflected in a story." },
+            { month: 12, theme: "Peekaboo & Connection", title: "Peek-a Who?", author: "Nina Laden", type: "Interactive", summary: "A clever and simple rhyming book with die-cut windows that give a hint of the animal hiding on the next page.", significance: "This award-winning book is a fantastic tool for developing prediction skills and satisfying a one-year-old's curiosity." },
+            { month: 12, theme: "Peekaboo & Connection", title: "Spring Is Here", author: "Will Hillenbrand", type: "Seasonal", summary: "A nearly wordless book where Mole tries to wake up his sleepy friend Bear to enjoy the first day of spring.", significance: "The visual storytelling encourages children to interpret pictures and understand a narrative without words, boosting observational skills." },
+            { month: 12, theme: "Peekaboo & Connection", title: "Clap Hands", author: "Helen Oxenbury", type: "Movement", summary: "A classic board book that invites babies to clap, wave, and play along with the simple actions depicted.", significance: "Directly encourages imitation and participation, which is a crucial step in learning and motor skill development." },
+            { month: 12, theme: "Peekaboo & Connection", title: "Say Zoop!", author: "Hervé Tullet", type: "Interactive", summary: "An interactive book that invites children to make sounds that correspond with the dots and shapes on the page.", significance: "From the creator of *Press Here*, this book brilliantly connects visual cues with vocal sounds, making it a fun and effective tool for pre-reading skills." },
+            { month: 12, theme: "Peekaboo & Connection", title: "Good Night, Little Blue", author: "Sarah Maas", type: "Classic", summary: "A calming story about saying goodnight, perfect for winding down at the end of the day.", significance: "Reinforces the bedtime routine with a gentle narrative, providing comfort and predictability for toddlers." },
+            { month: 12, theme: "Peekaboo & Connection", title: "Hello, Animals!", author: "Smriti Prasadam-Halls", type: "Animals", summary: "A high-contrast, black-and-white board book featuring simple illustrations of animals.", significance: "The bold, high-contrast images are specifically designed to be visually stimulating for young babies whose eyesight is still developing." },
+            { month: 13, theme: "Movement & Sounds", title: "Busy Builders", author: "Tony Mitton", type: "Concept", summary: "A rhyming look at all the noisy and busy machines on a construction site.", significance: "The rhythmic text and focus on machine sounds appeal to a toddler's love for noise and repetition, building vocabulary around a high-interest topic." },
+            { month: 13, theme: "Movement & Sounds", title: "My Car", author: "Byron Barton", type: "Concept", summary: "A simple story that follows a man named Sam and his car through a busy day.", significance: "Byron Barton's bold, simple illustrations are perfect for this age, clearly depicting objects and actions in a way that is easy for toddlers to understand." },
+            { month: 13, theme: "Movement & Sounds", title: "What Do Wheels Do All Day?", author: "April Jones Prince", type: "Concept", summary: "A rhyming exploration of all the different types of wheels and the important jobs they do.", significance: "This book encourages observation of the world, helping children notice common objects like wheels in their environment." },
+            { month: 13, theme: "Movement & Sounds", title: "Dancing Feet!", author: "Lindsey Craig", type: "Movement", summary: "A rhyming guessing game that shows different animal feet and asks, \"Whose feet are these?\"", significance: "The interactive format and focus on movement make it a fun, physical reading experience that encourages participation." },
+            { month: 13, theme: "Movement & Sounds", title: "Old MacDonald Had a Truck", author: "Steve Goetz", type: "Rhyme", summary: "A modern, hilarious twist on the classic song, where Old MacDonald's farm is full of construction vehicles.", significance: "This book cleverly combines a familiar song with a high-interest topic (trucks), making it an instant hit for read-alouds and sing-alongs." },
+            { month: 13, theme: "Movement & Sounds", title: "Tickle My Ears", author: "Jörg Mühle", type: "Interactive", summary: "An interactive book that invites the child to help a little rabbit get ready for bed by clapping, fluffing his pillow, and tickling his ears.", significance: "This charming book makes the bedtime routine an interactive and gentle game, giving the child a sense of participation and control." },
+            { month: 13, theme: "Movement & Sounds", title: "Baby Loves the Five Senses: Hearing!", author: "Ruth Spiro", type: "Sensory", summary: "A simple, scientifically accurate introduction to the sense of hearing for the youngest readers.", significance: "This board book breaks down a complex topic into an easy-to-understand concept, satisfying a toddler's budding curiosity about the world." },
+            { month: 13, theme: "Movement & Sounds", title: "Zoom, Zoom, Baby!", author: "Karen Katz", type: "Movement", summary: "A lift-the-flap book that celebrates all the ways babies can move, from crawling to clapping.", significance: "The interactive flaps and focus on a baby's own actions help develop self-awareness and motor skills." },
+            { month: 13, theme: "Movement & Sounds", title: "We're Going on a Bear Hunt", author: "Michael Rosen", type: "Classic", summary: "A family goes on an adventurous walk through grass, a river, and mud in search of a bear.", significance: "A literary classic, its repetitive, chant-along text and sound effects make it a perfect interactive read-aloud that children quickly memorize and participate in." },
+            { month: 13, theme: "Movement & Sounds", title: "Moo, Baa, La La La!", author: "Sandra Boynton", type: "Classic", summary: "A hilarious and simple introduction to animal sounds, with Boynton's signature quirky humor.", significance: "A bestselling classic, this book's infectious rhythm and silliness make learning animal sounds a joyful experience." },
+            { month: 14, theme: "Animals & Actions", title: "Wiggle Waggle", author: "Ellie Sandall", type: "Movement", summary: "A group of animals demonstrates different movements, inviting the reader to join in.", significance: "Encourages physical activity and imitation, helping toddlers connect words with actions and develop their motor skills." },
+            { month: 14, theme: "Animals & Actions", title: "Tip Tip Dig Dig", author: "Emma Garcia", type: "Movement", summary: "A vibrant book about construction vehicles and the sounds they make as they work.", significance: "The onomatopoeia and bold illustrations are highly engaging for toddlers who are often fascinated by big machines." },
+            { month: 14, theme: "Animals & Actions", title: "Animals in the Ocean", author: "Jill Esbaum", type: "Animals", summary: "Features stunning photographs of ocean animals, introducing them in a simple format.", significance: "The real-life images help children connect the concept of an animal with what it actually looks like, building their knowledge of the natural world." },
+            { month: 14, theme: "Animals & Actions", title: "Panda Pants", author: "Jackie Davis", type: "Animals", summary: "A little panda tries to convince his father that he needs a pair of pants.", significance: "A humorous and sweet story about a father and son that toddlers will find funny and relatable." },
+            { month: 14, theme: "Animals & Actions", title: "Hello, Farm!", author: "Maddie Frost", type: "Animals", summary: "An interactive lift-the-flap book that introduces animals on the farm.", significance: "The sturdy flaps and simple animal introductions are perfect for this age, encouraging curiosity and fine motor control." },
+            { month: 14, theme: "Animals & Actions", title: "Five Little Ducks", author: "Raffi", type: "Rhyme", summary: "The classic counting song is brought to life with charming illustrations.", significance: "Combining music and counting is a highly effective way to teach early math concepts in a memorable way." },
+            { month: 14, theme: "Animals & Actions", title: "Ten Tiny Tickles", author: "Karen Katz", type: "Interactive", summary: "A countdown book that ends with a loving tickle session.", significance: "This book makes reading a physically affectionate experience, strengthening the parent-child bond while teaching numbers." },
+            { month: 14, theme: "Animals & Actions", title: "Flip, Flap, Fly!", author: "Phyllis Root", type: "Movement", summary: "A reassuring story about baby animals learning to be independent, with their mothers' encouragement.", significance: "The rhyming, repetitive text is comforting and easy for toddlers to follow, gently exploring a theme of growing up." },
+            { month: 14, theme: "Animals & Actions", title: "Whose Feet?", author: "Sue Tarsky", type: "Interactive", summary: "A lift-the-flap guessing game that shows a pair of animal feet before revealing the whole animal.", significance: "This interactive format is great for developing prediction skills and learning about different animals." },
+            { month: 14, theme: "Animals & Actions", title: "Big Animal Book", author: "Roger Priddy", type: "Vocabulary", summary: "An oversized board book with large, clear photographs of a wide variety of animals.", significance: "The large format makes it easy for little hands to explore, and the real photos are excellent for building vocabulary and animal recognition." },
+            { month: 15, theme: "Silly & Sensory Fun", title: "The Pout-Pout Fish", author: "Deborah Diesen", type: "Emotional", summary: "A grumpy fish with a permanent pout is encouraged by his friends to cheer up.", significance: "A \"New York Times\" Bestseller, this book's rhyming text and sweet story gently introduce the concept of emotions and how friends can help us feel better." },
+            { month: 15, theme: "Silly & Sensory Fun", title: "Can You Make a Happy Face?", author: "Janice Behrens", type: "Interactive", summary: "An interactive book that encourages children to imitate the faces and actions of different animals.", significance: "This is a great tool for social-emotional learning, helping toddlers recognize and express different feelings." },
+            { month: 15, theme: "Silly & Sensory Fun", title: "Dinosaur Dance!", author: "Sandra Boynton", type: "Movement", summary: "A group of dinosaurs gets together for a silly, energetic dance party.", significance: "Boynton's infectious rhymes and goofy characters make this a book that inspires movement and laughter, perfect for active toddlers." },
+            { month: 15, theme: "Silly & Sensory Fun", title: "Spaceships and Rockets", author: "Alex Fabrizio", type: "Concept", summary: "A simple introduction to space vehicles for the youngest readers.", significance: "Taps into a child's curiosity about the world beyond, with simple concepts and clear illustrations." },
+            { month: 15, theme: "Silly & Sensory Fun", title: "Little Toot", author: "Hardie Gramatky", type: "Classic", summary: "A classic story about a small tugboat in New York Harbor who proves he can be brave and important.", significance: "This Caldecott Honor book is a timeless tale about courage and finding your place, with beautiful, dynamic illustrations." },
+            { month: 15, theme: "Silly & Sensory Fun", title: "Leo Can Swim", author: "Anna McQuinn", type: "Routine", summary: "A gentle story about a little boy's experience going to a swimming class with his dad.", significance: "This book provides a positive and reassuring introduction to a common childhood experience, helping to ease any potential anxiety." },
+            { month: 15, theme: "Silly & Sensory Fun", title: "I Can Share", author: "Karen Katz", type: "Emotional", summary: "A lift-the-flap book that explores the concept of sharing in a simple and positive way.", significance: "Sharing is a difficult concept for toddlers; this book introduces the idea in a gentle, interactive, and non-demanding format." },
+            { month: 15, theme: "Silly & Sensory Fun", title: "Big Box Little Box", author: "Caryl Hart", type: "Concept", summary: "A story that explores the concept of opposites through two cats and their different boxes.", significance: "The simple, rhyming text and clear illustrations make it an effective and fun way to teach the important cognitive concept of opposites." },
+            { month: 15, theme: "Silly & Sensory Fun", title: "This Is the Way We Go to School", author: "Yu-hsuan Huang", type: "Routine", summary: "An interactive book with sliders and tabs that shows children from around the world traveling to school in different ways.", significance: "This book introduces a gentle global perspective, showing that children have similar routines even if their environments are different." },
+            { month: 15, theme: "Silly & Sensory Fun", title: "Everything is Mama", author: "Jimmy Fallon", type: "Humor", summary: "A humorous book that captures the stage where a baby's first word for everything is \"Mama.\"", significance: "A funny and relatable book for both parents and children that celebrates a key language milestone." },
+            { month: 16, theme: "Routines & Seasons", title: "Wake Up, Freight Train!", author: "Danna Smith", type: "Routine", summary: "A rhyming story that follows a freight train as it gets ready for its day.", significance: "The parallel between the train's routine and a child's morning routine is a clever way to make daily rituals feel more fun and important." },
+            { month: 16, theme: "Routines & Seasons", title: "Time for Bed", author: "Mem Fox", type: "Routine", summary: "A soothing, rhyming story where animal mothers gently put their babies to bed.", significance: "A beloved classic, its lyrical text and calming illustrations make it one of the most popular bedtime books ever written, perfect for establishing a peaceful sleep routine." },
+            { month: 16, theme: "Routines & Seasons", title: "Llama Llama Wakey-Wake", author: "Anna Dewdney", type: "Routine", summary: "Part of the bestselling series, this book follows Llama Llama through his morning routine.", significance: "The simple, rhyming text and familiar character help toddlers understand and feel comfortable with their own daily schedules." },
+            { month: 16, theme: "Routines & Seasons", title: "Ladybug Girl Says Good Night", author: "Jacky Davis", type: "Routine", summary: "Ladybug Girl goes through her imaginative bedtime routine, from brushing her teeth to saying goodnight to her toys.", significance: "This book shows how imagination can be a part of everyday routines, making them more enjoyable for a child." },
+            { month: 16, theme: "Routines & Seasons", title: "Sleepy Bird", author: "Jeremy Tankard", type: "Routine", summary: "A little bird tries to find the perfect place to go to sleep.", significance: "A sweet and simple story with a relatable goal, reinforcing the comfort and importance of bedtime." },
+            { month: 16, theme: "Routines & Seasons", title: "Room on the Broom", author: "Julia Donaldson", type: "Classic", summary: "A friendly witch allows a group of animals to ride on her broom, but their combined weight causes it to snap.", significance: "An award-winning modern classic, this book's brilliant rhymes and engaging story about teamwork and friendship make it a read-aloud favorite." },
+            { month: 16, theme: "Routines & Seasons", title: "Spot Says Goodnight", author: "Eric Hill", type: "Routine", summary: "The classic character Spot the dog goes through his bedtime routine.", significance: "Spot's simple, clear world is perfect for toddlers, providing a straightforward and comforting depiction of a familiar routine." },
+            { month: 16, theme: "Routines & Seasons", title: "What Will Fit?", author: "Grace Lin", type: "Concept", summary: "A clever book that explores concepts of shape, size, and capacity as a family packs for a trip.", significance: "This book introduces early math and spatial reasoning concepts in a simple, narrative format." },
+            { month: 16, theme: "Routines & Seasons", title: "Where's the Ladybug?", author: "Ingela P. Arrhenius", type: "Interactive", summary: "An interactive hide-and-seek book with soft felt flaps.", significance: "The durable felt flaps are perfect for little hands, and the simple search-and-find format helps develop fine motor skills and object permanence." },
+            { month: 16, theme: "Routines & Seasons", title: "Snow Rabbit, Spring Rabbit", author: "II Sung Na", type: "Seasonal", summary: "A beautifully illustrated book that shows how different animals adapt as the seasons change from winter to spring.", significance: "This book provides a gentle and visually rich introduction to the concept of seasons and the natural world." },
+            { month: 17, theme: "Animals & Independence", title: "Go, Dog. Go!", author: "P.D. Eastman", type: "Classic", summary: "A classic Beginner Book filled with colorful dogs driving cars, climbing trees, and having a party.", significance: "Its simple, repetitive text is excellent for early readers, and it introduces basic concepts like colors, prepositions, and opposites in a fun, fast-paced story." },
+            { month: 17, theme: "Animals & Independence", title: "Grumpy Monkey", author: "Suzanne Lang", type: "Emotional", summary: "Jim the chimpanzee is in a bad mood, and his friends' attempts to cheer him up don't work until he learns it's okay to just feel grumpy sometimes.", significance: "A \"New York Times\" bestseller, this book is a wonderful tool for social-emotional learning, teaching children that it's normal to have bad days and to accept their feelings." },
+            { month: 17, theme: "Animals & Independence", title: "If You're Happy and You Know It", author: "Jane Cabrera", type: "Rhyme", summary: "A vibrant, illustrated version of the classic children's song, featuring a cast of joyful animals.", significance: "This book encourages participation through singing and actions, making reading an active and joyful experience that builds motor skills." },
+            { month: 17, theme: "Animals & Independence", title: "We're All Wonders", author: "R. J. Palacio", type: "Emotional", summary: "A picture book version of the bestselling novel *Wonder*, this story introduces the main character Auggie and his message of kindness and acceptance.", significance: "It's a powerful and accessible introduction to the important themes of empathy and celebrating differences, written for the youngest audience." },
+            { month: 17, theme: "Animals & Independence", title: "Hug Machine", author: "Scott Campbell", type: "Emotional", summary: "A little boy who is a \"hug machine\" goes around giving hugs to everyone and everything he meets.", significance: "A joyful and affectionate story that celebrates kindness and physical affection in a sweet and humorous way." },
+            { month: 17, theme: "Animals & Independence", title: "Leo Loves Baby Time", author: "Anna McQuinn", type: "Routine", summary: "Leo the toddler goes to a library \"baby time\" program, where he sings, plays, and reads.", significance: "This book provides a positive and familiar depiction of a common activity, which can help prepare a child for similar group experiences." },
+            { month: 17, theme: "Animals & Independence", title: "Hands Can", author: "Cheryl Willis Hudson", type: "Concept", summary: "A simple, rhyming text that shows all the wonderful, positive things hands can do, from waving hello to helping out.", significance: "This book has a gentle and powerful message about using our hands for kindness, an important early lesson in social behavior." },
+            { month: 17, theme: "Animals & Independence", title: "Little Penguin Gets the Hiccups", author: "Tadgh Bentley", type: "Humor", summary: "A hilarious interactive story where the reader is asked to help scare the hiccups out of a little penguin.", significance: "This book breaks the fourth wall and speaks directly to the child, making them an active participant in the story and promoting interactive fun." },
+            { month: 17, theme: "Animals & Independence", title: "Hello, World! How Do Apples Grow?", author: "Jill McDonald", type: "Nature", summary: "Part of a popular series, this book offers a simple, non-fiction introduction to the life cycle of an apple.", significance: "It satisfies a toddler's natural curiosity about the world with clear illustrations and easy-to-understand facts about nature." },
+            { month: 17, theme: "Animals & Independence", title: "Where's the Baby Chick?", author: "Nosy Crow", type: "Interactive", summary: "An interactive board book with sturdy felt flaps for finding hidden baby animals.", significance: "The felt flaps are easy for small fingers to manipulate, providing great practice for fine motor skills while playing a fun game of peekaboo." },
+            { month: 18, theme: "Real-World Connections", title: "Mail Duck", author: "Erica Sirotich", type: "Concept", summary: "A cheerful duck delivers mail to his animal friends, with fun flaps and envelopes to open.", significance: "This interactive book introduces the concept of mail and community helpers in a playful and engaging way." },
+            { month: 18, theme: "Real-World Connections", title: "Planes Go", author: "Steve Light", type: "Concept", summary: "A dynamic board book that uses onomatopoeia to describe the sounds and actions of different types of airplanes.", significance: "The bold illustrations and sound words are highly engaging for toddlers and help build vocabulary related to transportation." },
+            { month: 18, theme: "Real-World Connections", title: "Tap the Magic Tree", author: "Christie Matheson", type: "Interactive", summary: "An interactive book that invites the child to tap, rub, and shake the pages to make a tree change through the four seasons.", significance: "This brilliantly simple book teaches the concept of seasons and cause and effect, showing how a child's actions can magically transform the pictures." },
+            { month: 18, theme: "Real-World Connections", title: "A Trip to the Library", author: "Veronica Wagner", type: "Routine", summary: "A simple, straightforward introduction to what happens during a visit to the library.", significance: "This book helps demystify a common outing and can prepare a child for the experience, making it feel familiar and comfortable." },
+            { month: 18, theme: "Real-World Connections", title: "Over and Under the Snow", author: "Kate Messner", type: "Nature", summary: "A beautiful book that reveals the secret world of animals that live under the snow during winter.", significance: "A Caldecott Honor book, it introduces children to a fascinating aspect of the natural world with lyrical text and stunning illustrations." },
+            { month: 18, theme: "Real-World Connections", title: "Let's Go to the Market", author: "Caryl Hart", type: "Routine", summary: "A rhyming story that follows a family as they visit a bustling outdoor market.", significance: "It introduces the concept of shopping and community in a vibrant and cheerful way, with lots of details to spot in the pictures." },
+            { month: 18, theme: "Real-World Connections", title: "Rah, Rah, Radishes!", author: "April Pulley Sayre", type: "Nature", summary: "A vibrant, rhyming celebration of fresh vegetables found at a farmers' market.", significance: "With its colorful photographs and energetic text, this book makes vegetables look fun and appealing, promoting healthy eating habits from an early age." },
+            { month: 18, theme: "Real-World Connections", title: "The Airport Book", author: "Lisa Brown", type: "Concept", summary: "A detailed look at the entire process of traveling through an airport, from check-in to takeoff.", significance: "This book is perfect for preparing a child for their first flight, explaining each step in a clear and reassuring way with engaging, detailed illustrations." },
+            { month: 18, theme: "Real-World Connections", title: "Library Day", author: "Anne Rockwell", type: "Routine", summary: "A little boy visits the library for story time and to check out his own books.", significance: "It portrays the library as a welcoming and exciting place, fostering a positive association with books and reading from an early age." },
+            { month: 18, theme: "Real-World Connections", title: "Bunny's Book Club", author: "Annie Silvestro", type: "Friendship", summary: "A bunny who loves to listen to story time outside the library window decides to find a way to borrow books for his animal friends.", significance: "A charming story that celebrates the love of reading and the spirit of sharing, with a sweet and determined main character." },
+            { month: 19, theme: "Friendship & Emotion", title: "Llama Llama Time to Share", author: "Anna Dewdney", type: "Emotional", summary: "Llama Llama has a hard time sharing his toys when a new friend comes to play.", significance: "This bestselling series excels at portraying toddler emotions realistically. This book provides a perfect opportunity to talk about the difficult but important skill of sharing." },
+            { month: 19, theme: "Friendship & Emotion", title: "The Feelings Book", author: "Todd Parr", type: "Emotional", summary: "A simple and colorful exploration of a wide range of emotions, showing that all feelings are okay.", significance: "With its bold, simple art and direct text, this book is an excellent tool for helping toddlers identify and name their feelings, a key part of social-emotional development." },
+            { month: 19, theme: "Friendship & Emotion", title: "Mine!", author: "Sue Heap & Rachel Bright", type: "Emotional", summary: "A humorous and simple story about two characters who both want the same thing.", significance: "It captures the essence of a very common toddler conflict in a lighthearted way, opening the door for conversations about taking turns." },
+            { month: 19, theme: "Friendship & Emotion", title: "Not Quite Narwhal", author: "Jessie Sima", type: "Friendship", summary: "A little unicorn who was born in the ocean and grew up with narwhals discovers there are others like him on land.", significance: "A sweet and popular story about belonging and celebrating what makes you unique, with a gentle message of acceptance." },
+            { month: 19, theme: "Friendship & Emotion", title: "Oliver Elephant", author: "Lou Peacock", type: "Friendship", summary: "A little boy loses his beloved toy elephant during a shopping trip with his family.", significance: "This story compassionately addresses the powerful attachment a child can have to a comfort object and the distress of losing it." },
+            { month: 19, theme: "Friendship & Emotion", title: "I Am Enough", author: "Grace Byers", type: "Emotional", summary: "A lyrical and empowering ode to self-confidence and respecting others.", significance: "A \"New York Times\" bestseller, this book has a powerful, positive message about self-worth and kindness that is beautiful to share with a child from the very beginning." },
+            { month: 19, theme: "Friendship & Emotion", title: "Hello Hello", author: "Brendan Wenzel", type: "Animals", summary: "A stunningly illustrated book that introduces a huge variety of animals, celebrating the wonderful diversity of life on Earth.", significance: "From a Caldecott Honor-winning artist, this book's visual richness is captivating, and it carries a subtle but important message about connection and conservation." },
+            { month: 19, theme: "Friendship & Emotion", title: "Bear Is a Bear", author: "Jonathan Stutzman", type: "Friendship", summary: "A heartwarming story about a bear who is a constant, loving companion to a little girl as she grows up.", significance: "This book beautifully illustrates the powerful bond between a child and a beloved stuffed animal, celebrating the importance of friendship and memory." },
+            { month: 19, theme: "Friendship & Emotion", title: "Hello, World! Ocean Life", author: "Jill McDonald", type: "Nature", summary: "A simple non-fiction board book introducing different ocean creatures.", significance: "Part of a popular educational series, it uses cheerful illustrations and simple facts to make learning about the natural world accessible and fun for toddlers." },
+            { month: 19, theme: "Friendship & Emotion", title: "Hello, Baby Animals", author: "DK", type: "Animals", summary: "A high-contrast board book featuring black-and-white images of baby animals with pops of color.", significance: "The combination of high-contrast images and real animal photos is perfect for stimulating a baby's vision while building their vocabulary." },
+            { month: 20, theme: "Weather, Nature & Growing Up", title: "All About Weather", author: "Huda Harajli", type: "Nature", summary: "A simple introduction to different types of weather, from sunny days to snowy nights.", significance: "This book helps toddlers understand the world around them by explaining basic weather concepts in an easy-to-grasp way." },
+            { month: 20, theme: "Weather, Nature & Growing Up", title: "Little Tree", author: "Loren Long", type: "Nature", summary: "A poignant story about a little tree who is afraid to let go of his leaves, even as the seasons change around him.", significance: "A \"New York Times\" bestseller, this book offers a gentle and beautiful metaphor for growing up and embracing change." },
+            { month: 20, theme: "Weather, Nature & Growing Up", title: "Growing Vegetable Soup", author: "Lois Ehlert", type: "Nature", summary: "A father and child plant seeds and watch them grow into vegetables, which they then use to make soup.", significance: "With its bold, graphic illustrations and simple text, this book is a wonderful introduction to gardening and where food comes from." },
+            { month: 20, theme: "Weather, Nature & Growing Up", title: "Up in the Garden and Down in the Dirt", author: "Kate Messner", type: "Nature", summary: "This book reveals the parallel worlds of the garden above ground and the busy ecosystem of insects and animals in the dirt below.", significance: "It's a beautifully illustrated and informative book that gives children a deeper appreciation for the complexity and wonder of nature." },
+            { month: 20, theme: "Weather, Nature & Growing Up", title: "Guess Who? Backyard Animals", author: "Jaye Garnett", type: "Animals", summary: "An interactive guessing game book that gives clues about common backyard animals.", significance: "The riddle format is highly engaging for toddlers and helps them develop critical thinking and animal recognition skills." },
+            { month: 20, theme: "Weather, Nature & Growing Up", title: "Lola Plants a Garden", author: "Anna McQuinn", type: "Nature", summary: "Inspired by a book of poems, a little girl named Lola decides to plant her own flower garden.", significance: "This sweet story shows how books can inspire real-world activities and celebrates the joy and patience of watching something grow." },
+            { month: 20, theme: "Weather, Nature & Growing Up", title: "Planting a Rainbow", author: "Lois Ehlert", type: "Nature", summary: "A mother and child plant bulbs and seeds in the fall and winter, which grow into a vibrant rainbow of flowers in the spring and summer.", significance: "A classic for decades, this book's stunning, colorful illustrations are a joyful introduction to colors, flowers, and the gardening process." },
+            { month: 20, theme: "Weather, Nature & Growing Up", title: "The Digger and the Flower", author: "Joseph Kuefler", type: "Nature", summary: "A construction digger discovers a single, beautiful flower and decides to protect it from the other machines.", significance: "This gentle story carries a powerful and accessible message about the importance of caring for nature, even in unexpected places." },
+            { month: 20, theme: "Weather, Nature & Growing Up", title: "Bathe the Cat", author: "Alice B. McGinty", type: "Humor", summary: "A hilarious, rhyming story about a family trying to complete their chores, but the cat has mixed up their to-do list.", significance: "An award-winning and laugh-out-loud funny book, its clever rhymes and chaotic humor make it a joyful read-aloud experience." },
+            { month: 20, theme: "Weather, Nature & Growing Up", title: "A Seed Is Sleepy", author: "Dianna Hutts Aston", type: "Nature", summary: "A beautifully illustrated and poetic look at the science and wonder of seeds.", significance: "This Caldecott Honor book combines lyrical text with scientifically accurate illustrations, making it a book that is both educational and artistically breathtaking." },
+            { month: 21, theme: "Concepts & Curiosity", title: "Whose Truck?", author: "Toni Buzzeo", type: "Concept", summary: "A lift-the-flap guessing game that gives clues about different types of community trucks, like a fire engine and a garbage truck.", significance: "The interactive format and high-interest subject matter make this a fun way to learn about community helpers and their vehicles." },
+            { month: 21, theme: "Concepts & Curiosity", title: "Circle Round", author: "Anne Sibley O'Brien", type: "Concept", summary: "A simple, rhyming text that explores all the ways circles are a part of our world, from bubbles to hugs.", significance: "This book helps children develop shape recognition by showing how a basic shape appears in many different contexts in their daily lives." },
+            { month: 21, theme: "Concepts & Curiosity", title: "Baby Goes to Market", author: "Atinuke", type: "Concept", summary: "A mother and baby go to a Nigerian market. As they shop, the baby is given extra pieces of fruit by the friendly vendors, which he secretly eats.", significance: "An award-winning book, it's a wonderful introduction to another culture and a clever, humorous counting book all in one." },
+            { month: 21, theme: "Concepts & Curiosity", title: "What Is Light?", author: "Markette Sheppard", type: "Concept", summary: "A simple, poetic exploration of the concept of light in its many forms.", significance: "This book tackles an abstract concept in a way that is accessible and wondrous for a young child, sparking curiosity and observation." },
+            { month: 21, theme: "Concepts & Curiosity", title: "123s of Art", author: "Sabrina Hahn", type: "Concept", summary: "This book uses famous works of art to teach numbers and counting.", significance: "It's a beautiful and clever way to introduce both early math concepts and art appreciation simultaneously." },
+            { month: 21, theme: "Concepts & Curiosity", title: "My Big Book of Outdoors", author: "Tim Hopgood", type: "Nature", summary: "A large-format book that celebrates all the wonderful things to see and do in the great outdoors through the seasons.", significance: "The oversized pages and vibrant illustrations are immersive, encouraging a love and appreciation for nature and outdoor play." },
+            { month: 21, theme: "Concepts & Curiosity", title: "All the Way to Havana", author: "Margarita Engle", type: "Concept", summary: "A young boy travels with his family in their classic car to the city of Havana.", significance: "An award-winning book, its energetic text and vibrant illustrations provide a joyful glimpse into Cuban culture and the importance of family." },
+            { month: 21, theme: "Concepts & Curiosity", title: "Zoom! Zoom!", author: "Roxane Marie Galliez", type: "Concept", summary: "A lyrical and imaginative story about a little boy who dreams of flying to the moon.", significance: "This book celebrates the power of imagination and dreams, with a gentle, soothing text that makes it a lovely bedtime read." },
+            { month: 21, theme: "Concepts & Curiosity", title: "Hello Head to Toe", author: "Sam Lloyd", type: "Interactive", summary: "An interactive puppet book that allows the child to make the character wiggle, wave, and play.", significance: "The puppet element makes this an incredibly engaging and interactive experience, perfect for teaching body parts and actions." },
+            { month: 21, theme: "Concepts & Curiosity", title: "Touch the Brightest Star", author: "Christie Matheson", type: "Interactive", summary: "An interactive bedtime book that invites the child to touch and interact with the pages to make the nighttime world come alive.", significance: "A magical and calming book that makes the child a participant in the story, teaching concepts about night and weather in a hands-on way." },
+            { month: 22, theme: "Bedtime & Reflection", title: "Goodnight, Veggies", author: "Diana Murray", type: "Routine", summary: "A rhyming bedtime story where all the vegetables in the garden get ready to sleep.", significance: "This book provides a gentle and charming way to make vegetables familiar and friendly, with a soothing rhythm perfect for winding down." },
+            { month: 22, theme: "Bedtime & Reflection", title: "Owl Babies", author: "Martin Waddell", type: "Classic", summary: "Three baby owls wake up to find their mother gone and worry until she safely returns.", significance: "A timeless classic, this book perfectly captures the anxiety of separation and the profound reassurance of a parent's return, making it deeply comforting for toddlers." },
+            { month: 22, theme: "Bedtime & Reflection", title: "Good Night, Little Man", author: "Dan Yaccarino", type: "Routine", summary: "A father's loving and imaginative goodnight wishes to his son.", significance: "This book is a beautiful depiction of a father-child bond, with a sweet and reassuring tone for bedtime." },
+            { month: 22, theme: "Bedtime & Reflection", title: "Orion and the Dark", author: "Emma Yarlett", type: "Emotional", summary: "A little boy named Orion is afraid of the dark, until the Dark itself comes to visit and takes him on an adventure to show him there's nothing to fear.", significance: "An award-winning book, it creatively and gently addresses a very common childhood fear in an empowering and reassuring way." },
+            { month: 22, theme: "Bedtime & Reflection", title: "Sleep Like a Tiger", author: "Mary Logue", type: "Classic", summary: "A little girl insists she isn't tired, so her parents patiently explain how different animals sleep until she is ready to curl up herself.", significance: "A Caldecott Honor book, its lyrical text and beautiful illustrations make it a perfect, non-demanding bedtime story that gently coaxes a child toward sleep." },
+            { month: 22, theme: "Bedtime & Reflection", title: "Night Animals", author: "Gianna Marino", type: "Animals", summary: "A group of nocturnal animals are scared by strange noises in the dark, not realizing they are making the noises themselves.", significance: "A humorous and clever book that plays with the theme of nighttime fears in a lighthearted way." },
+            { month: 22, theme: "Bedtime & Reflection", title: "Dream Animals", author: "Emily Winfield Martin", type: "Classic", summary: "A beautifully illustrated, lyrical book about the magical animals that come to carry children off to sleep and into their dreams.", significance: "A \"New York Times\" bestseller, its enchanting, vintage-style illustrations and dreamy text create a magical and comforting atmosphere for bedtime." },
+            { month: 22, theme: "Bedtime & Reflection", title: "There's a Bear in Your Book", author: "Tom Fletcher", type: "Interactive", summary: "An interactive book where the reader must follow instructions to help get a friendly bear out of the book and into bed.", significance: "This book makes reading a fun game, giving the child a sense of agency and turning the process of going to bed into a playful activity." },
+            { month: 22, theme: "Bedtime & Reflection", title: "Ten Minutes to Bed: Little Unicorn", author: "Rhiannon Fielding", type: "Routine", summary: "A little unicorn has a magical adventure in the ten minutes before bedtime.", significance: "Part of a bestselling series, the countdown format is a brilliant tool for making the transition to bedtime clear and predictable for a toddler." },
+            { month: 22, theme: "Bedtime & Reflection", title: "Bedtime for Yeti", author: "Vin Vogel", type: "Routine", summary: "A little yeti goes through his unique and funny bedtime routine.", significance: "This story is a humorous and relatable look at bedtime rituals, showing that everyone, even a yeti, needs to wind down for sleep." },
+            { month: 23, theme: "Celebrations, Counting & Closure", title: "1, 2, 3, Jump!", author: "Lisl H. Detlefsen", type: "Concept", summary: "A lively, rhyming counting book set at a busy swimming hole.", significance: "The energetic illustrations and simple counting structure make it a fun way to practice numbers in a cheerful, summery setting." },
+            { month: 23, theme: "Celebrations, Counting & Closure", title: "You Are (Not) Small", author: "Anna Kang", type: "Concept", summary: "Two fuzzy creatures argue about who is big and who is small, until other creatures arrive and show that size is all about perspective.", significance: "An award-winning book, it brilliantly teaches the concept of relativity in a simple, humorous, and accessible way." },
+            { month: 23, theme: "Celebrations, Counting & Closure", title: "All Are Welcome", author: "Alexandra Penfold", type: "Emotional", summary: "A rhyming celebration of a diverse school where every child is welcomed and celebrated.", significance: "A \"New York Times\" bestseller, this book has a powerful and important message of inclusivity and kindness, presented in a joyful and accessible way for the youngest readers." },
+            { month: 23, theme: "Celebrations, Counting & Closure", title: "Pete the Cat: The Wheels on the Bus", author: "James Dean", type: "Classic", summary: "The popular character Pete the Cat puts his own cool spin on the classic children's song.", significance: "Combining a beloved character with a familiar song makes this an irresistible sing-along book that toddlers will ask for again and again." },
+            { month: 23, theme: "Celebrations, Counting & Closure", title: "Thank You, Omu!", author: "Oge Mora", type: "Emotional", summary: "A generous woman named Omu shares her delicious stew with her neighbors until there is none left for herself, but her community comes together to thank her.", significance: "A Caldecott Honor book, this is a beautiful and heartwarming story about community, sharing, and gratitude, with stunning collage illustrations." },
+            { month: 23, theme: "Celebrations, Counting & Closure", title: "What If...", author: "Samantha Berger", type: "Emotional", summary: "A creative girl imagines all the ways she could continue to make art and tell stories even if her traditional tools were taken away.", significance: "This is a powerful and inspiring celebration of creativity, imagination, and resilience that encourages children to see possibilities everywhere." },
+            { month: 23, theme: "Celebrations, Counting & Closure", title: "Baby Parade", author: "Rebecca O'Connell", type: "Concept", summary: "A simple, rhyming text that follows a diverse group of babies and their caregivers as they parade through town.", significance: "This book celebrates community and togetherness with a cheerful, easy-to-follow narrative that young toddlers will enjoy." },
+            { month: 23, theme: "Celebrations, Counting & Closure", title: "Bear Stays Up for Christmas", author: "Karma Wilson", type: "Seasonal", summary: "Bear's friends are determined to keep him awake to experience the magic of Christmas for the first time.", significance: "A heartwarming installment in the bestselling *Bear* series, this book is a wonderful story about friendship, traditions, and the joy of giving." },
+            { month: 23, theme: "Celebrations, Counting & Closure", title: "Look! Look Again", author: "Agnese Baruzzi", type: "Interactive", summary: "An innovative book with transparent pages that transform the images as you turn them, revealing surprises.", significance: "This book is a fantastic tool for developing visual perception and prediction skills, showing how things can change depending on how you look at them." },
+            { month: 23, theme: "Celebrations, Counting & Closure", title: "Just Because", author: "Mac Barnett", type: "Classic", summary: "A father gives wonderfully imaginative and fantastical answers to his daughter's curious \"why\" questions at bedtime.", significance: "An award-winning book, it is a beautiful celebration of curiosity and imagination, encouraging children to wonder about the world and find the magic in the everyday." }
+        ];
+
+        const monthNavigation = document.getElementById('month-navigation');
+        const monthTitle = document.getElementById('month-title');
+        const monthTheme = document.getElementById('month-theme');
+        const bookGrid = document.getElementById('book-grid');
+        const modal = document.getElementById('book-modal');
+        const closeModalButton = document.getElementById('close-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalAuthor = document.getElementById('modal-author');
+        const modalSummary = document.getElementById('modal-summary');
+        const modalSignificance = document.getElementById('modal-significance');
+        
+        let currentMonth = 12;
+        let chart;
+
+        const monthInfo = {};
+        bookData.forEach(book => {
+            if (!monthInfo[book.month]) {
+                monthInfo[book.month] = { theme: book.theme, books: [] };
+            }
+            monthInfo[book.month].books.push(book);
+        });
+
+        function renderNavigation() {
+            Object.keys(monthInfo).forEach(monthNum => {
+                const button = document.createElement('button');
+                button.textContent = `Month ${monthNum}`;
+                button.classList.add('nav-button', 'px-3', 'py-1', 'sm:px-4', 'sm:py-2', 'rounded-full', 'text-sm', 'sm:text-base', 'font-semibold', 'text-sky-800', 'bg-white', 'hover:bg-sky-100', 'transition-all', 'duration-200', 'shadow-sm');
+                if (parseInt(monthNum) === currentMonth) {
+                    button.classList.add('active');
+                }
+                button.addEventListener('click', () => {
+                    currentMonth = parseInt(monthNum);
+                    renderContent();
+                    updateActiveButton();
+                });
+                monthNavigation.appendChild(button);
+            });
+        }
+
+        function updateActiveButton() {
+            const buttons = document.querySelectorAll('.nav-button');
+            buttons.forEach(button => {
+                if (parseInt(button.textContent.split(' ')[1]) === currentMonth) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+        }
+
+        function renderContent() {
+            const currentMonthData = monthInfo[currentMonth];
+            monthTitle.textContent = `Month ${currentMonth}`;
+            monthTheme.textContent = currentMonthData.theme;
+            bookGrid.innerHTML = '';
+            
+            currentMonthData.books.forEach(book => {
+                const card = document.createElement('div');
+                card.className = 'bg-sky-50 rounded-lg p-3 text-center cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105';
+                card.innerHTML = `
+                    <div class="aspect-square bg-yellow-100 rounded-md flex items-center justify-center mb-2">
+                        <span class="text-4xl">📚</span>
+                    </div>
+                    <h4 class="font-bold text-sm text-sky-900 truncate">${book.title}</h4>
+                    <p class="text-xs text-slate-500 truncate">${book.author}</p>
+                `;
+                card.addEventListener('click', () => showModal(book));
+                bookGrid.appendChild(card);
+            });
+            updateChart(currentMonth);
+        }
+
+        function showModal(book) {
+            modalTitle.textContent = book.title;
+            modalAuthor.textContent = book.author;
+            modalSummary.innerHTML = `<p class="mb-2">${book.summary}</p>`;
+            modalSignificance.innerHTML = `<p>${book.significance}</p>`;
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.remove('scale-95');
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.add('scale-95');
+        }
+
+        function updateChart(month) {
+            const booksForMonth = monthInfo[month].books;
+            const typeCounts = booksForMonth.reduce((acc, book) => {
+                acc[book.type] = (acc[book.type] || 0) + 1;
+                return acc;
+            }, {});
+
+            const labels = Object.keys(typeCounts);
+            const data = Object.values(typeCounts);
+
+            if (chart) {
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = data;
+                chart.update();
+            } else {
+                const ctx = document.getElementById('book-type-chart').getContext('2d');
+                chart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Book Types',
+                            data: data,
+                            backgroundColor: [
+                                '#0ea5e9', '#facc15', '#ec4899', '#6b7280', 
+                                '#a855f7', '#10b981', '#f97316', '#38bdf8'
+                            ],
+                            borderColor: '#ffffff',
+                            borderWidth: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: { family: "'Inter', sans-serif", size: 12 },
+                                    color: '#334155',
+                                    padding: 15
+                                }
+                            },
+                            tooltip: {
+                                bodyFont: { family: "'Inter', sans-serif" },
+                                titleFont: { family: "'Inter', sans-serif" }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        closeModalButton.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape") {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNavigation();
+            renderContent();
+        });
+    </script>
+</body>
+</html>

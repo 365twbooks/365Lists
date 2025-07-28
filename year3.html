@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Year 3 Book Explorer: Ages 3-4</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Cormorant+Garamond:wght@700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Storybook -->
+    <!-- Application Structure Plan: A single-page dashboard with tab-based navigation for each of the 12 months (36-47). This structure organizes the 120 books into manageable, chronological sections. Clicking a book card opens a modal with a concise summary of its developmental significance, preventing UI clutter. An interactive chart provides an at-a-glance analysis of the book genres for each month, adding a data-driven layer to the report which originally lacked thematic categorization for this year. -->
+    <!-- Visualization & Content Choices: Report Info: Year 3 Book List (120 books) -> Goal: Organize/Explore -> Viz/Presentation: Interactive monthly tabs with a grid of book cards -> Interaction: Click tab to change month; click card for details -> Justification: Breaks down a large dataset into user-friendly chunks; modal provides deep-dive without navigation. Report Info: Book characteristics (inferred from titles) -> Goal: Analyze/Compare -> Viz/Presentation: Dynamic Doughnut Chart -> Interaction: Chart updates on month selection -> Justification: Provides a quick, visual summary of each month's thematic focus. Library/Method: Chart.js for Canvas chart. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfcf9;
+            color: #57534e;
+        }
+        .font-cormorant {
+            font-family: 'Cormorant Garamond', serif;
+        }
+        .modal {
+            transition: opacity 0.25s ease;
+        }
+        .modal-content {
+            transition: transform 0.25s ease;
+        }
+        .nav-button.active {
+            background-color: #a16207;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="font-cormorant text-3xl sm:text-4xl md:text-5xl font-bold text-yellow-800">Year 3 Book Explorer</h1>
+            <p class="text-lg sm:text-xl text-stone-600 mt-2">An Interactive Guide for Ages 3-4</p>
+        </header>
+
+        <section id="introduction" class="bg-white p-6 rounded-2xl shadow-sm mb-8 max-w-4xl mx-auto">
+            <h2 class="font-cormorant text-2xl font-bold text-yellow-700 mb-4">A Year of Expanding Worlds</h2>
+            <div class="space-y-4 text-stone-700">
+                <p>Between the ages of three and four, a child's imagination blossoms. They begin to follow more complex stories, understand humor, and develop a deeper sense of empathy for characters. The books in this collection are chosen to nurture this growth, featuring timeless classics, tales of adventure, and stories that reflect a child's everyday life and feelings.</p>
+                <p>Use the tabs below to explore the curated book list for each month. Click on any book to learn about its significance, and use the chart to see the balance of themes and genres for each period.</p>
+            </div>
+        </section>
+
+        <main>
+            <div id="month-navigation" class="flex flex-wrap justify-center gap-2 mb-8"></div>
+            
+            <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm">
+                <h3 id="month-title" class="font-cormorant text-2xl sm:text-3xl font-bold text-center text-yellow-700 mb-6"></h3>
+                <div id="book-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6"></div>
+            </div>
+
+            <section id="analysis" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm mt-8">
+                <h2 class="font-cormorant text-2xl sm:text-3xl font-bold text-center text-yellow-700 mb-4">Thematic Breakdown</h2>
+                <p id="chart-intro" class="text-center text-stone-600 max-w-2xl mx-auto mb-6">This chart highlights the blend of genres in the book selection for the chosen month. See how the collection balances classic fables, animal stories, and tales of adventure to support your child's growing imagination and understanding of the world.</p>
+                <div class="chart-container">
+                    <canvas id="book-type-chart"></canvas>
+                </div>
+            </section>
+        </main>
+
+    </div>
+
+    <div id="book-modal" class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div class="modal-content bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl p-6 sm:p-8 overflow-y-auto transform scale-95">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h2 id="modal-title" class="font-cormorant text-2xl sm:text-3xl font-bold text-yellow-800"></h2>
+                    <p id="modal-author" class="text-lg text-stone-500 mb-4"></p>
+                </div>
+                <button id="close-modal" class="text-3xl text-stone-400 hover:text-yellow-600 transition-colors">&times;</button>
+            </div>
+            <div id="modal-body" class="text-slate-700 space-y-4">
+                <div id="modal-summary"></div>
+                <div id="modal-significance"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const bookData = [
+            { month: 36, title: "Hop on Pop", author: "Dr. Seuss", type: "Humor", summary: "A classic Dr. Seuss book designed for early readers, featuring simple, rhyming words.", significance: "Builds phonetic awareness and reading confidence with its playful and simple rhyming structure." },
+            { month: 36, title: "The Caboose Who Got Loose", author: "Bill Peet", type: "Adventure", summary: "A caboose named Katy grows tired of being at the end of the train and wishes for a new life in the country.", significance: "A charming story about finding your own place in the world, with beautiful illustrations and a gentle message about change." },
+            { month: 36, title: "Mr. Rabbit and the Lovely Present", author: "Charlotte Zolotow", type: "Classic", summary: "A little girl seeks help from a wise rabbit to find the perfect birthday present for her mother.", significance: "A Caldecott Honor book that beautifully illustrates problem-solving and thoughtfulness, with a focus on colors." },
+            { month: 36, title: "A Chair for My Mother", author: "Vera B. Williams", type: "Daily Life", summary: "A family saves their coins in a large jar to buy a comfortable armchair after losing everything in a fire.", significance: "A Caldecott Honor book that teaches about family, community, and the value of saving for something special." },
+            { month: 36, title: "Miss Nelson is Missing!", author: "Harry Allard", type: "Humor", summary: "A class of misbehaving students gets a rude awakening when their sweet teacher, Miss Nelson, is replaced by the strict substitute, Viola Swamp.", significance: "A hilarious and beloved story that teaches children to appreciate kindness and good behavior through a clever mystery." },
+            { month: 36, title: "The Little House", author: "Virginia Lee Burton", type: "Classic", summary: "A little country house watches the world change around her as a bustling city grows up over the years.", significance: "Winner of the Caldecott Medal, this is a poignant story about the passage of time, change, and the importance of home." },
+            { month: 36, title: "A Fish Out of Water", author: "Helen Palmer", type: "Humor", summary: "A boy overfeeds his pet fish, causing it to grow to an enormous size with chaotic results.", significance: "A classic early reader that teaches the importance of following instructions in a funny and memorable way." },
+            { month: 36, title: "Mike Mulligan and His Steam Shovel", author: "Virginia Lee Burton", type: "Classic", summary: "Mike Mulligan and his trusty steam shovel, Mary Anne, try to prove they can still dig as much as modern machines.", significance: "A timeless story about perseverance, friendship, and adapting to change, celebrating the value of hard work." },
+            { month: 36, title: "I'm Dirty!", author: "Kate & Jim McMullan", type: "Adventure", summary: "A backhoe loader proudly describes its tough and dirty job.", significance: "Perfect for vehicle lovers, this book uses energetic text and fun sound words to celebrate the importance of hard work." },
+            { month: 36, title: "Sylvester and the Magic Pebble", author: "William Steig", type: "Classic", summary: "A donkey named Sylvester finds a magic pebble but accidentally turns himself into a rock, leading to a long separation from his family.", significance: "Winner of the Caldecott Medal, this is a touching story about family, love, and being careful what you wish for." },
+            { month: 37, title: "Andy and the Lion", author: "James Daugherty", type: "Adventure", summary: "A boy named Andy befriends a lion by removing a thorn from its paw, and the lion later repays his kindness.", significance: "A Caldecott Honor book, this is a classic retelling of the Androcles fable that celebrates courage and friendship." },
+            { month: 37, title: "The Relatives Came", author: "Cynthia Rylant", type: "Daily Life", summary: "A joyful story about a large family gathering when relatives drive up from Virginia for a summer visit.", significance: "A Caldecott Honor book that beautifully captures the warmth, love, and happy chaos of a family reunion." },
+            { month: 37, title: "The Giant Jam Sandwich", author: "John Vernon Lord", type: "Humor", summary: "A town plagued by wasps comes up with a clever and delicious plan to trap them in a giant jam sandwich.", significance: "A wonderfully imaginative and silly story about community problem-solving, with detailed and engaging illustrations." },
+            { month: 37, title: "Little Bear", author: "Else Holmelund Minarik", type: "Classic", summary: "A collection of four sweet stories about the adventures of Little Bear and his loving mother.", significance: "An iconic early reader, these gentle stories beautifully depict a warm and secure parent-child relationship." },
+            { month: 37, title: "Millions of Cats", author: "Wanda Gág", type: "Classic", summary: "A very old man goes searching for a kitten and comes home with 'hundreds of cats, thousands of cats, millions and billions and trillions of cats.'", significance: "A Newbery Honor book, this is one of the first and most beloved American picture books, known for its rhythmic, repetitive text." },
+            { month: 37, title: "Wacky Wednesday", author: "Dr. Seuss", type: "Humor", summary: "A child wakes up to a progressively wackier day where everything is out of place.", significance: "A fun and silly book that encourages close observation and attention to detail as the reader tries to spot all the wacky things." },
+            { month: 37, title: "The Maggie B.", author: "Irene Haas", type: "Adventure", summary: "A little girl wishes for a ship named after her and spends a magical day sailing with her baby brother.", significance: "A beautifully illustrated and imaginative story that celebrates independence and the simple joys of a day at sea." },
+            { month: 37, title: "Titch", author: "Pat Hutchins", type: "Daily Life", summary: "Titch is the smallest in his family, but his tiny seed grows into the biggest plant of all.", significance: "A simple and reassuring story that shows that even the smallest person can make a big impact." },
+            { month: 37, title: "Petunia", author: "Roger Duvoisin", type: "Classic", summary: "A silly goose named Petunia finds a book and believes that simply owning it makes her wise, with comical results.", significance: "A classic story that humorously teaches that true wisdom comes from learning, not just possessing books." },
+            { month: 37, title: "The Story of Ferdinand", author: "Munro Leaf", type: "Classic", summary: "A gentle bull named Ferdinand would rather smell flowers than fight in the bullring.", significance: "A timeless and important story about peace, being true to yourself, and refusing to conform to expectations." },
+            { month: 38, title: "The Snowy Nap", author: "Jan Brett", type: "Animal Friends", summary: "Hedgie the hedgehog tries to stay awake to see the winter farm animals he usually misses during hibernation.", significance: "Features Jan Brett's signature detailed illustrations with side panels that tell a parallel story, encouraging close observation." },
+            { month: 38, title: "George Shrinks", author: "William Joyce", type: "Adventure", summary: "A boy named George wakes up to find he has shrunk to the size of a mouse and must complete his chores in a giant world.", significance: "An imaginative and visually inventive story about problem-solving and perspective." },
+            { month: 38, title: "Ira Sleeps Over", author: "Bernard Waber", type: "Daily Life", summary: "Ira is excited for his first sleepover but worries about whether he should bring his teddy bear.", significance: "A classic and relatable story that gently addresses childhood anxieties and the importance of being yourself." },
+            { month: 38, title: "Harry the Dirty Dog", author: "Gene Zion", type: "Animal Friends", summary: "A white dog with black spots hates baths so much that he runs away and gets so dirty his family doesn't recognize him.", significance: "A beloved classic about a mischievous but lovable dog, with a humorous plot that children adore." },
+            { month: 38, title: "May I Bring a Friend?", author: "Beatrice Schenk de Regniers", type: "Humor", summary: "A boy is invited to tea by the King and Queen and asks if he can bring a friend, each day bringing a new and more exotic animal.", significance: "Winner of the Caldecott Medal, this is a rhyming and cumulative story that celebrates friendship and acceptance in a regal, silly setting." },
+            { month: 38, title: "Amos & Boris", author: "William Steig", type: "Friendship", summary: "A mouse and a whale, two very different creatures, save each other's lives and become the best of friends.", significance: "A beautiful and touching story about the power of friendship to overcome any obstacle, even size." },
+            { month: 38, title: "The Quiet Book", author: "Deborah Underwood", type: "Emotional", summary: "A gentle book that explores all the different kinds of quiet, from 'first snowfall quiet' to 'right before you yell SURPRISE! quiet.'", significance: "A sweet and observant book that helps children understand different emotions and situations through the concept of quietness." },
+            { month: 38, title: "Time of Wonder", author: "Robert McCloskey", type: "Nature", summary: "A beautifully written and illustrated book that captures the magic of a summer on an island in Maine, from foggy mornings to a powerful hurricane.", significance: "Winner of the Caldecott Medal, this book is a lyrical celebration of nature and the changing seasons." },
+            { month: 38, title: "Mr. Gumpy's Outing", author: "John Burningham", type: "Humor", summary: "Mr. Gumpy takes a group of children and animals for a ride in his boat, but they all start to misbehave.", significance: "A Kate Greenaway Medal winner, this is a charming and repetitive story about rules and consequences, with a forgiving and happy ending." },
+            { month: 38, title: "The Happy Day", author: "Ruth Krauss", type: "Nature", summary: "Sleeping woodland animals wake up one by one to joyfully discover the first flower of spring.", significance: "A Caldecott Honor book with beautiful illustrations, this is a simple and joyful celebration of the changing seasons." },
+            { month: 39, title: "Bread and Jam for Frances", author: "Russell Hoban", type: "Daily Life", summary: "A fussy badger named Frances decides she only wants to eat bread and jam, until her parents cleverly show her the joy of variety.", significance: "A classic story that humorously addresses the common issue of picky eating in a gentle and relatable way." },
+            { month: 39, title: "Owl at Home", author: "Arnold Lobel", type: "Classic", summary: "Five gentle and humorous stories about the slightly silly and very lovable Owl.", significance: "From the creator of Frog and Toad, this is a perfect early chapter book that is both funny and comforting." },
+            { month: 39, title: "Frog and Toad Together", author: "Arnold Lobel", type: "Friendship", summary: "Another collection of five heartwarming stories about the enduring friendship of Frog and Toad.", significance: "A Newbery Honor book, these stories continue to model the kindness, patience, and humor of a true friendship." },
+            { month: 39, title: "Blueberries for Sal", author: "Robert McCloskey", type: "Classic", summary: "A little girl and a little bear get mixed up while picking blueberries with their mothers on a Maine hillside.", significance: "A Caldecott Honor book, this is a timeless story about a gentle mix-up in nature, with charming illustrations." },
+            { month: 39, title: "The Truck Book", author: "Harry McNaught", type: "Vocabulary", summary: "A detailed look at all kinds of trucks and what they do.", significance: "A classic nonfiction book for young vehicle enthusiasts, with clear, labeled illustrations that build vocabulary." },
+            { month: 39, title: "Pet Show!", author: "Ezra Jack Keats", type: "Daily Life", summary: "Archie wants to enter his cat in the neighborhood pet show, but his cat is missing.", significance: "A Caldecott Honor book that celebrates community, resourcefulness, and the love of pets." },
+            { month: 39, title: "Harry by the Sea", author: "Gene Zion", type: "Animal Friends", summary: "Harry the dog gets covered in seaweed at the beach and is mistaken for a sea monster.", significance: "Another humorous adventure with the beloved dirty dog, this story is a fun take on a case of mistaken identity." },
+            { month: 39, title: "The Story of Ping", author: "Marjorie Flack", type: "Adventure", summary: "A little duck who lives on a boat on the Yangtze River gets lost and must find his way back to his family.", significance: "A classic story of adventure and the importance of home, with beautiful illustrations that offer a glimpse into another culture." },
+            { month: 39, title: "No Roses for Harry!", author: "Gene Zion", type: "Animal Friends", summary: "Harry hates the rosy sweater his grandma knitted for him and tries everything to lose it.", significance: "A funny and relatable story about a well-intentioned but unwanted gift, starring the beloved Harry the dog." },
+            { month: 39, title: "Drummer Hoff", author: "Barbara Emberley", type: "Classic", summary: "A cumulative, rhyming story about a group of soldiers who work together to fire a cannon.", significance: "Winner of the Caldecott Medal, this book is celebrated for its vibrant woodcut illustrations and its rhythmic, catchy text." },
+            { month: 40, title: "Make Way for Ducklings", author: "Robert McCloskey", type: "Classic", summary: "Mr. and Mrs. Mallard search for the perfect place to raise their ducklings in Boston, and a kind policeman helps them cross a busy street.", significance: "Winner of the Caldecott Medal, this is an iconic and beloved story about family and community kindness, with famous illustrations of Boston." },
+            { month: 40, title: "The Trip", author: "Ezra Jack Keats", type: "Imagination", summary: "A boy named Louie creates a shoebox diorama and imagines he is flying back to his old neighborhood to see his friends.", significance: "A beautiful story that explores feelings of loneliness and the power of imagination to connect us to the people we miss." },
+            { month: 40, title: "The Big Snow", author: "Berta & Elmer Hader", type: "Nature", summary: "Woodland animals prepare for the coming of winter and a big snow.", significance: "Winner of the Caldecott Medal, this book is a gentle and beautifully illustrated look at how animals survive the winter." },
+            { month: 40, title: "The Loud Book!", author: "Deborah Underwood", type: "Emotional", summary: "A companion to *The Quiet Book*, this explores all the different kinds of loud, from a 'tummy rumble' to a 'fire engine.'", significance: "A fun and observant book that helps children identify and label different sounds and the situations associated with them." },
+            { month: 40, title: "Officer Buckle and Gloria", author: "Peggy Rathmann", type: "Humor", summary: "Officer Buckle's boring safety tips become a huge hit when his new police dog, Gloria, secretly acts them out behind his back.", significance: "Winner of the Caldecott Medal, this is a hilarious and heartwarming story about teamwork and friendship." },
+            { month: 40, title: "The Big Orange Splot", author: "Daniel Manus Pinkwater", type: "Creativity", summary: "Mr. Plumbean's neat house on a neat street gets a big splot of orange paint, inspiring him to transform his house into a work of art.", significance: "A wonderful and quirky story that celebrates individuality, creativity, and the courage to be different." },
+            { month: 40, title: "One Morning in Maine", author: "Robert McCloskey", type: "Daily Life", summary: "A little girl named Sal loses her first tooth and goes on a trip to the village with her father.", significance: "A classic companion to *Blueberries for Sal*, this is a gentle and detailed story about a common childhood milestone and family life in Maine." },
+            { month: 40, title: "Ox-Cart Man", author: "Donald Hall", type: "Classic", summary: "A lyrical and poetic book that follows a 19th-century New England farmer through the cycle of the year as he packs his cart and goes to market.", significance: "Winner of the Caldecott Medal, this is a beautiful and quiet book that illustrates the rhythm of the seasons and family life." },
+            { month: 40, title: "The Doorbell Rang", author: "Pat Hutchins", type: "Concept", summary: "Two children are about to share a plate of cookies when the doorbell rings, and more and more friends arrive to share.", significance: "A simple and brilliant introduction to the concept of division, told through an engaging and relatable story." },
+            { month: 40, title: "Come On, Rain!", author: "Karen Hesse", type: "Daily Life", summary: "A little girl waits expectantly for a rainstorm to break the summer heat in her city neighborhood, leading to a joyful dance in the rain.", significance: "A beautifully written and illustrated book that captures the sensory details and joyful release of a summer rainstorm." },
+            { month: 41, title: "How to Make an Apple Pie and See the World", author: "Marjorie Priceman", type: "Adventure", summary: "When the market is closed, a girl travels the world to gather the finest ingredients for her apple pie.", significance: "A fun and imaginative story that doubles as a geography lesson, showing where different ingredients come from." },
+            { month: 41, title: "The Tale of Jemima Puddle-Duck", author: "Beatrix Potter", type: "Classic", summary: "A naive duck who wants to hatch her own eggs is tricked by a charming but foxy gentleman.", significance: "A classic Beatrix Potter tale with beautiful illustrations, it's a gentle introduction to the concept of being wary of strangers." },
+            { month: 41, title: "Miss Nelson is Back", author: "Harry Allard", type: "Humor", summary: "The sequel to *Miss Nelson is Missing!*, where the kids worry that the dreaded Viola Swamp will return when their teacher is sick.", significance: "Another hilarious installment in the series that continues the fun mystery and reinforces the lesson of appreciating a kind teacher." },
+            { month: 41, title: "Anatole and the Cat", author: "Eve Titus", type: "Adventure", summary: "Anatole, a heroic French mouse, must outwit a cheese-loving cat.", significance: "A Caldecott Honor book, this is a charming and clever story about a brave and resourceful mouse." },
+            { month: 41, title: "The Travels of Babar", author: "Jean de Brunhoff", type: "Classic", summary: "The beloved elephant king Babar and his wife Celeste go on a series of adventures after their hot-air balloon drifts away.", significance: "A classic story from the iconic Babar series, filled with gentle adventure and imaginative escapades." },
+            { month: 41, title: "The Paper Bag Princess", author: "Robert Munsch", type: "Classic", summary: "A clever and resourceful princess outwits a dragon to rescue a prince, who then criticizes her messy appearance.", significance: "A classic feminist fairy tale that empowers children by celebrating wit, courage, and self-respect over traditional princess roles." },
+            { month: 41, title: "A Pocket for Corduroy", author: "Don Freeman", type: "Classic", summary: "The beloved teddy bear Corduroy goes on an adventure in a laundromat to find a pocket for his overalls.", significance: "A sweet and gentle sequel to *Corduroy*, this story is a comforting tale of a small adventure and a happy reunion." },
+            { month: 41, title: "Little Bear's Visit", author: "Else Holmelund Minarik", type: "Daily Life", summary: "Little Bear visits his grandparents and has a wonderful time listening to his mother's old stories.", significance: "A Caldecott Honor book, this is a warm and gentle story that celebrates the special bond between generations." },
+            { month: 41, title: "The Curious Garden", author: "Peter Brown", type: "Nature", summary: "A little boy discovers a struggling garden in his gray city and decides to care for it, eventually transforming the entire city.", significance: "A beautiful and inspiring story about the power of one person to make a difference and bring nature back to urban spaces." },
+            { month: 41, title: "Katie and the Sunflowers", author: "James Mayhew", type: "Arts & Culture", summary: "A little girl named Katie steps into famous paintings by Van Gogh, Gauguin, and Cézanne.", significance: "Part of a wonderful series that introduces children to famous works of art in an accessible and magical way." },
+            { month: 42, title: "A Big Mooncake for Little Star", author: "Grace Lin", type: "Imagination", summary: "A magical and imaginative explanation for the phases of the moon, as a little girl nibbles away at a giant mooncake.", significance: "A Caldecott Honor book, this is a stunningly illustrated and creative story that is both a modern folktale and a sweet bedtime read." },
+            { month: 42, title: "Fletcher and the Falling Leaves", author: "Julia Rawlinson", type: "Nature", summary: "A young fox worries when his favorite tree starts losing its leaves and tries to save them.", significance: "A sweet and gentle story that introduces the changing of the seasons and deals with feelings of worry and change." },
+            { month: 42, title: "Corduroy", author: "Don Freeman", type: "Classic", summary: "A teddy bear in a department store goes on a late-night adventure to find his missing button, hoping it will help him find a home.", significance: "A timeless and heartwarming classic about the desire for a home and friendship, beloved for generations." },
+            { month: 42, title: "The Biggest Bear", author: "Lynd Ward", type: "Classic", summary: "A boy gets a pet bear cub that grows into a very big problem.", significance: "Winner of the Caldecott Medal, this is a classic story about responsibility and the relationship between humans and nature." },
+            { month: 42, title: "We Are Water Protectors", author: "Carole Lindstrom", type: "Nature", summary: "An Indigenous girl stands up to protect the Earth's water from a 'black snake' of oil pipelines.", significance: "Winner of the Caldecott Medal, this is a powerful and beautifully illustrated book that introduces the concept of environmental activism from an Indigenous perspective." },
+            { month: 42, title: "Katie Meets the Impressionists", author: "James Mayhew", type: "Arts & Culture", summary: "Katie steps into famous Impressionist paintings by Monet and Renoir.", significance: "Another installment in the series that makes art history come alive for young children in an engaging and narrative way." },
+            { month: 42, title: "The Snowman Storybook", author: "Raymond Briggs", type: "Classic", summary: "A text version of the classic wordless picture book about a snowman who comes to life.", significance: "Provides a narrative to the beloved story, making it accessible in a new way while retaining its magical feel." },
+            { month: 42, title: "The Mitten", author: "Jan Brett", type: "Folktale", summary: "A boy loses his white mitten in the snow, and a series of woodland animals crawl inside to stay warm, stretching it to an enormous size.", significance: "A classic Ukrainian folktale, beloved for Jan Brett's intricate and detailed illustrations that include foreshadowing in the borders." },
+            { month: 42, title: "Goodbye Summer, Hello Autumn", author: "Kenard Pak", type: "Nature", summary: "A brother and sister walk through their town, observing all the signs that autumn is arriving.", significance: "A beautifully illustrated and gentle book that encourages observation of the natural world and the changing seasons." },
+            { month: 42, title: "Leaf Man", author: "Lois Ehlert", type: "Nature", summary: "A man made of leaves blows away on the wind, traveling over a landscape made of real autumn leaves.", significance: "A visually stunning book that uses actual fall leaves to create its collage illustrations, celebrating the beauty of the season." },
+            { month: 43, title: "The Little Island", author: "Margaret Wise Brown", type: "Nature", summary: "A poetic and beautiful book that describes the life of a small island through the changing seasons.", significance: "Winner of the Caldecott Medal, this is a lyrical and profound story about nature, faith, and being part of a larger world." },
+            { month: 43, title: "Lentil", author: "Robert McCloskey", type: "Classic", summary: "A boy who can't sing learns to play the harmonica and saves the day when a grumpy old man tries to ruin his town's celebration.", significance: "A classic story about finding your own unique talent and contributing to your community." },
+            { month: 43, title: "Frog and Toad All Year", author: "Arnold Lobel", type: "Friendship", summary: "Five more stories about the beloved friends Frog and Toad as they go through the seasons of the year.", significance: "A classic early chapter book that continues to model a perfect friendship through gentle humor and relatable situations." },
+            { month: 43, title: "The Little Brute Family", author: "Russell Hoban", type: "Emotional", summary: "A family of 'brutes' who are mean and unhappy learn to be gentle and find happiness.", significance: "A simple but powerful story about how small changes in behavior can lead to a much happier family life." },
+            { month: 43, title: "The Man Who Didn't Wash His Dishes", author: "Phyllis Krasilovsky", type: "Humor", summary: "A man gets tired of washing dishes and decides to use flowerpots and other strange items instead, with messy results.", significance: "A silly and cumulative story that humorously illustrates the importance of keeping up with chores." },
+            { month: 43, title: "Over and Under the Pond", author: "Kate Messner", type: "Nature", summary: "This book reveals the parallel worlds of life above and below the surface of a pond.", significance: "A beautifully illustrated and informative book that gives children a deeper appreciation for the hidden wonders of a pond ecosystem." },
+            { month: 43, title: "Burt Dow, Deep-Water Man", author: "Robert McCloskey", type: "Adventure", summary: "An old fisherman gets caught in a storm, seeks refuge inside a whale, and uses a creative solution to get out.", significance: "A tall tale with vibrant, colorful illustrations, it's a fun and imaginative sea adventure." },
+            { month: 43, title: "A Weekend with Wendell", author: "Kevin Henkes", type: "Friendship", summary: "Sophie has to deal with a very bossy houseguest named Wendell, until she figures out how to turn the tables.", significance: "A relatable story about navigating difficult social situations and learning to stand up for yourself." },
+            { month: 43, title: "A Tree is Nice", author: "Janice May Udry", type: "Nature", summary: "A simple and poetic book that lists all the wonderful reasons why trees are nice.", significance: "Winner of the Caldecott Medal, this is a classic book that fosters an appreciation for nature with its gentle text and beautiful illustrations." },
+            { month: 43, title: "Stone Soup", author: "Marcia Brown", type: "Folktale", summary: "Three hungry soldiers cleverly trick a village into making a feast by starting a soup with just a stone.", significance: "A Caldecott Honor-winning version of the classic folktale that teaches about cooperation and community." },
+            { month: 44, title: "A Story, A Story", author: "Gail E. Haley", type: "Folktale", summary: "An African tale about how Ananse the \"spider man\" cleverly tricks the Sky God to win stories for the children of the world.", significance: "Winner of the Caldecott Medal, this book uses beautiful woodcut illustrations to introduce children to the rich tradition of African folklore." },
+            { month: 44, title: "White Snow, Bright Snow", author: "Alvin Tresselt", type: "Nature", summary: "A poetic book that captures the magic and wonder of the first snowfall of the season.", significance: "Winner of the Caldecott Medal, this is a beautifully illustrated and atmospheric book that celebrates the changing of the seasons." },
+            { month: 44, title: "Chicka Chicka 1, 2, 3", author: "Bill Martin Jr. & Michael Sampson", type: "Concept", summary: "A companion to *Chicka Chicka Boom Boom*, this book features numbers climbing up an apple tree.", significance: "A fun, rhythmic, and effective way to teach counting and number recognition." },
+            { month: 44, title: "Flora and the Flamingo", author: "Molly Idle", type: "Friendship", summary: "A wordless book with interactive flaps that tells the story of a little girl and a flamingo who learn to dance together.", significance: "A Caldecott Honor book, this is a beautiful and graceful story about friendship, imitation, and learning to work in sync." },
+            { month: 44, title: "Bear and Ball", author: "Cliff Wright", type: "Friendship", summary: "A simple story about a bear who loves his ball.", significance: "A sweet and gentle story that captures the simple joy a child can find in a favorite toy." },
+            { month: 44, title: "McDuff Moves In", author: "Rosemary Wells", type: "Animal Friends", summary: "A little white dog is looking for a home and finds the perfect family.", significance: "The first book in a charming series, it's a sweet and heartwarming story about finding a family." },
+            { month: 44, title: "Five Minutes' Peace", author: "Jill Murphy", type: "Daily Life", summary: "A mother elephant tries to get just five minutes of peace and quiet away from her three energetic children.", significance: "A hilarious and deeply relatable story for both parents and children that captures the loving chaos of family life." },
+            { month: 44, title: "The Gardener", author: "Sarah Stewart", type: "Daily Life", summary: "A little girl brings her love of gardening to her uncle's gloomy city bakery during the Great Depression, told through a series of letters.", significance: "A Caldecott Honor book, this is a beautiful and heartwarming story about the power of hope, resilience, and making the world a more beautiful place." },
+            { month: 44, title: "Chalk", author: "Bill Thomson", type: "Imagination", summary: "A wordless book where three children find a bag of magic chalk that makes their drawings come to life.", significance: "A stunningly realistic and imaginative book that tells a complete story through its illustrations, sparking creativity and storytelling skills." },
+            { month: 44, title: "John Henry", author: "Julius Lester", type: "Folktale", summary: "A powerful retelling of the American tall tale about the steel-driving man who raced against a steam drill.", significance: "A Caldecott Honor book, this version is celebrated for its lyrical text and vibrant illustrations that bring the legendary folk hero to life." },
+            { month: 45, title: "The Poky Little Puppy", author: "Janette Sebring Lowrey", type: "Classic", summary: "A curious puppy who lags behind his siblings always misses out on dessert... until the end.", significance: "One of the bestselling children's books of all time, it's a simple, classic story that has been loved for generations." },
+            { month: 45, title: "The Little Rabbit Who Wanted Red Wings", author: "Carolyn Sherwin Bailey", type: "Classic", summary: "A little white rabbit wishes for red wings, but learns that it's best to be yourself.", significance: "A classic tale about self-acceptance and being happy with who you are." },
+            { month: 45, title: "The Tale of Mrs. Tiggy-Winkle", author: "Beatrix Potter", type: "Classic", summary: "A little girl named Lucie meets a charming hedgehog laundress in the hills.", significance: "A beloved Beatrix Potter classic with beautiful illustrations, it's a sweet and imaginative story about an unlikely friendship." },
+            { month: 45, title: "The Country Bunny and the Little Gold Shoes", author: "DuBose Heyward", type: "Classic", summary: "A little country bunny dreams of becoming one of the five Easter Bunnies, and proves that she is wise, kind, and swift enough for the job.", significance: "A classic and empowering story about perseverance and proving that you can achieve your dreams, no matter where you come from." },
+            { month: 45, title: "The Gingerbread Man", author: "Jim Aylesworth", type: "Folktale", summary: "A classic retelling of the folktale about a gingerbread man who runs away from everyone who wants to eat him.", significance: "The repetitive, catchy refrain makes this a fun and predictable story for children to chant along with." },
+            { month: 45, title: "Harold's Fairy Tale", author: "Crockett Johnson", type: "Imagination", summary: "Harold and his purple crayon draw their way through an enchanted garden, where nothing is as it seems.", significance: "Another adventure with Harold that celebrates the power of imagination and creative problem-solving." },
+            { month: 45, title: "The Bear Who Couldn't Sleep", author: "Caroline Nastro", type: "Animal Friends", summary: "A bear decides he's not going to hibernate one winter and has an adventure instead.", significance: "A sweet story about trying something new, with cozy illustrations." },
+            { month: 45, title: "Katie and the Mona Lisa", author: "James Mayhew", type: "Arts & Culture", summary: "Katie climbs into the Mona Lisa's painting to find out why she isn't happy.", significance: "A wonderful introduction to one of the world's most famous paintings, making art history accessible and fun." },
+            { month: 45, title: "The Quiltmaker's Gift", author: "Jeff Brumbeau", type: "Classic", summary: "A generous quiltmaker who gives her beautiful quilts away inspires a greedy king to learn the joy of giving.", significance: "A beautifully illustrated story with a powerful message about generosity, happiness, and the fact that true joy comes from giving, not receiving." },
+            { month: 45, title: "The Emperor and the Kite", author: "Jane Yolen", type: "Folktale", summary: "A tiny princess, ignored by her family, uses her kite to save her father, the emperor, when he is captured.", significance: "A Caldecott Honor book, this is a beautiful and empowering Chinese folktale that shows how even the smallest person can be brave and resourceful." },
+            { month: 46, title: "Tikki Tikki Tembo", author: "Arlene Mosel", type: "Folktale", summary: "A classic Chinese folktale about a boy with a very long name who falls into a well, and the trouble that his long name causes.", significance: "A Caldecott Honor book, its repetitive and rhythmic text makes it a fun (if cautionary) tale to read aloud." },
+            { month: 46, title: "Leo the Late Bloomer", author: "Robert Kraus", type: "Emotional", summary: "Leo the tiger can't do anything right—he can't read, write, or draw. His father worries, but his mother knows he'll bloom in his own time.", significance: "A classic and reassuring story for any child who is developing at their own pace, teaching patience and the importance of unconditional love." },
+            { month: 46, title: "The Tale of Benjamin Bunny", author: "Beatrix Potter", type: "Classic", summary: "Peter Rabbit's cousin, Benjamin Bunny, helps him retrieve his clothes from Mr. McGregor's garden.", significance: "A classic sequel to *The Tale of Peter Rabbit*, it's another charming adventure with beautiful illustrations." },
+            { month: 46, title: "Flossie and the Fox", author: "Patricia C. McKissack", type: "Folktale", summary: "A clever girl named Flossie outwits a sly fox who is trying to steal her basket of eggs.", significance: "A Caldecott Honor book, this is a wonderful story from the African-American oral tradition that celebrates wit and confidence." },
+            { month: 46, title: "The Bear and the Piano", author: "David Litchfield", type: "Friendship", summary: "A bear finds a piano in the woods, learns to play, and becomes a famous star in the city, but he misses his forest friends.", significance: "An award-winning and beautifully illustrated story about friendship, passion, and remembering where you come from." },
+            { month: 46, title: "The Very Clumsy Click Beetle", author: "Eric Carle", type: "Classic", summary: "A young click beetle can't land on its feet, but with encouragement, it keeps trying until it succeeds.", significance: "An interactive story about perseverance, with a rewarding 'click' sound at the end. It teaches that it's okay to struggle and important to keep trying." },
+            { month: 46, title: "Tomie de Paola's Mother Goose", author: "Tomie de Paola", type: "Classic", summary: "A beautifully illustrated collection of classic Mother Goose nursery rhymes.", significance: "A Caldecott Honor book, this is a comprehensive and beautifully rendered collection that is essential for building a child's cultural and literary foundation." },
+            { month: 46, title: "Rosie's Walk", author: "Pat Hutchins", type: "Humor", summary: "A hen named Rosie goes for a walk around the farm, completely unaware that a fox is unsuccessfully trying to catch her.", significance: "A classic of visual humor, where the pictures tell a different story than the simple text. It's excellent for developing observational skills." },
+            { month: 46, title: "Wemberly Worried", author: "Kevin Henkes", type: "Emotional", summary: "A little mouse named Wemberly worries about everything, especially starting school.", significance: "A perfect and reassuring story for any child who struggles with anxiety, showing that worries can be managed and new experiences can be fun." },
+            { month: 46, title: "Why Mosquitoes Buzz in People's Ears", author: "Verna Aardema", type: "Folktale", summary: "A cumulative West African tale that explains why mosquitoes buzz in people's ears.", significance: "Winner of the Caldecott Medal, this book is celebrated for its stunning, stylized illustrations and its rhythmic, repetitive text that explains a natural phenomenon through a classic 'why' story." },
+            { month: 47, title: "Ask Mr. Bear", author: "Marjorie Flack", type: "Classic", summary: "A little boy asks all the animals for a good birthday present for his mother, and Mr. Bear gives him the best idea of all: a bear hug.", significance: "A timeless and sweet story that celebrates the simple and priceless gift of affection." },
+            { month: 47, title: "The Tale of the Flopsy Bunnies", author: "Beatrix Potter", type: "Classic", summary: "Benjamin Bunny's children get into trouble with Mr. McGregor after eating too many lettuces and falling asleep.", significance: "Another charming adventure from the world of Peter Rabbit, with beautiful illustrations and a gentle sense of peril." },
+            { month: 47, title: "King Bidgood's in the Bathtub", author: "Audrey Wood", type: "Humor", summary: "A king refuses to get out of his bathtub, forcing his entire court to join him in the tub for battle, lunch, and a masquerade ball.", significance: "A Caldecott Honor book, this is a hilariously silly and cumulative story with lavish, detailed illustrations." },
+            { month: 47, title: "The Tale of Tom Kitten", author: "Beatrix Potter", type: "Classic", summary: "Three little kittens get into mischief and ruin their fancy clothes before their mother's tea party.", significance: "A relatable and charming story about the messiness of childhood, with Potter's signature beautiful illustrations." },
+            { month: 47, title: "Morris the Moose", author: "B. Wiseman", type: "Humor", summary: "A moose who doesn't know he's a moose gets into a funny and confusing argument with a cow and some deer.", significance: "A classic early reader that is a silly and simple introduction to the concepts of identity and animal classification." },
+            { month: 47, title: "A Mother for Choco", author: "Keiko Kasza", type: "Daily Life", summary: "A little bird named Choco searches for a mother and finds a loving, adoptive family with a bear.", significance: "A sweet and heartwarming story that celebrates adoptive families and shows that love, not appearance, is what makes a family." },
+            { month: 47, title: "Pierre: A Cautionary Tale", author: "Maurice Sendak", type: "Humor", summary: "A little boy who doesn't care about anything gets eaten by a lion, but is rescued and learns to care.", significance: "A darkly humorous and rhythmic story from the author of *Where the Wild Things Are*, it's a memorable cautionary tale." },
+            { month: 47, title: "Bear's New Friend", author: "Karma Wilson", type: "Friendship", summary: "Bear and his friends hear a mysterious sound and discover a new friend, an owl, is hiding in a tree.", significance: "A sweet story from the popular series that explores feelings of shyness and the joy of making a new friend." },
+            { month: 47, title: "Play with Me", author: "Marie Hall Ets", type: "Friendship", summary: "A little girl tries to play with the animals in the meadow, but she learns she must be quiet and patient for them to come to her.", significance: "A Caldecott Honor book, this is a gentle and quiet story that teaches the importance of patience and observation in making friends with nature." },
+            { month: 47, title: "The Selfish Crocodile", author: "Faustin Charles", type: "Friendship", summary: "A selfish crocodile who won't share the river is saved by a brave little mouse, and learns the importance of friendship.", significance: "A colorful fable with a clear and simple message about the rewards of kindness and sharing." }
+        ];
+
+        const monthNavigation = document.getElementById('month-navigation');
+        const monthTitle = document.getElementById('month-title');
+        const bookGrid = document.getElementById('book-grid');
+        const modal = document.getElementById('book-modal');
+        const closeModalButton = document.getElementById('close-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalAuthor = document.getElementById('modal-author');
+        const modalSummary = document.getElementById('modal-summary');
+        const modalSignificance = document.getElementById('modal-significance');
+        
+        let currentMonth = 36;
+        let chart;
+
+        const monthInfo = {};
+        bookData.forEach(book => {
+            if (!monthInfo[book.month]) {
+                monthInfo[book.month] = { books: [] };
+            }
+            monthInfo[book.month].books.push(book);
+        });
+
+        function renderNavigation() {
+            Object.keys(monthInfo).forEach(monthNum => {
+                const button = document.createElement('button');
+                button.textContent = `Month ${monthNum}`;
+                button.classList.add('nav-button', 'px-3', 'py-1', 'sm:px-4', 'sm:py-2', 'rounded-full', 'text-sm', 'sm:text-base', 'font-semibold', 'text-yellow-800', 'bg-white', 'hover:bg-yellow-100', 'transition-all', 'duration-200', 'shadow-sm');
+                if (parseInt(monthNum) === currentMonth) {
+                    button.classList.add('active');
+                }
+                button.addEventListener('click', () => {
+                    currentMonth = parseInt(monthNum);
+                    renderContent();
+                    updateActiveButton();
+                });
+                monthNavigation.appendChild(button);
+            });
+        }
+
+        function updateActiveButton() {
+            const buttons = document.querySelectorAll('.nav-button');
+            buttons.forEach(button => {
+                if (parseInt(button.textContent.split(' ')[1]) === currentMonth) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+        }
+
+        function renderContent() {
+            const currentMonthData = monthInfo[currentMonth];
+            monthTitle.textContent = `Month ${currentMonth}`;
+            bookGrid.innerHTML = '';
+            
+            currentMonthData.books.forEach(book => {
+                const card = document.createElement('div');
+                card.className = 'bg-yellow-50 rounded-lg p-3 text-center cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105';
+                card.innerHTML = `
+                    <div class="aspect-square bg-emerald-100 rounded-md flex items-center justify-center mb-2">
+                        <span class="text-4xl">📘</span>
+                    </div>
+                    <h4 class="font-bold text-sm text-yellow-900 truncate">${book.title}</h4>
+                    <p class="text-xs text-stone-500 truncate">${book.author}</p>
+                `;
+                card.addEventListener('click', () => showModal(book));
+                bookGrid.appendChild(card);
+            });
+            updateChart(currentMonth);
+        }
+
+        function showModal(book) {
+            modalTitle.textContent = book.title;
+            modalAuthor.textContent = book.author;
+            modalSummary.innerHTML = `<p class="mb-2">${book.summary}</p>`;
+            modalSignificance.innerHTML = `<p>${book.significance}</p>`;
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.remove('scale-95');
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.add('scale-95');
+        }
+
+        function updateChart(month) {
+            const booksForMonth = monthInfo[month].books;
+            const typeCounts = booksForMonth.reduce((acc, book) => {
+                acc[book.type] = (acc[book.type] || 0) + 1;
+                return acc;
+            }, {});
+
+            const labels = Object.keys(typeCounts);
+            const data = Object.values(typeCounts);
+
+            if (chart) {
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = data;
+                chart.update();
+            } else {
+                const ctx = document.getElementById('book-type-chart').getContext('2d');
+                chart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Book Types',
+                            data: data,
+                            backgroundColor: [
+                                '#f59e0b', '#10b981', '#8b5cf6', '#6b7280', 
+                                '#ec4899', '#3b82f6', '#ef4444', '#22c55e'
+                            ],
+                            borderColor: '#ffffff',
+                            borderWidth: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: { family: "'Inter', sans-serif", size: 12 },
+                                    color: '#44403c',
+                                    padding: 15
+                                }
+                            },
+                            tooltip: {
+                                bodyFont: { family: "'Inter', sans-serif" },
+                                titleFont: { family: "'Inter', sans-serif" }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        closeModalButton.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape") {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNavigation();
+            renderContent();
+        });
+    </script>
+</body>
+</html>

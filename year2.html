@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Year 2 Book Explorer: Ages 2-3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Earthy Tones -->
+    <!-- Application Structure Plan: A single-page dashboard with tab-based navigation for each of the 12 months (24-35). This structure organizes the 120 books into manageable, thematic sections, making exploration intuitive. Clicking a book card opens a modal with a concise summary of its developmental significance, preventing UI clutter. An interactive chart provides an at-a-glance analysis of the developmental focus (e.g., Imagination, Humor, Creativity) for each month, adding a data-driven layer to the report. -->
+    <!-- Visualization & Content Choices: Report Info: Year 2 Book List (120 books) -> Goal: Organize/Explore -> Viz/Presentation: Interactive monthly tabs with a grid of book cards -> Interaction: Click tab to change month; click card for details -> Justification: Breaks down a large dataset into user-friendly chunks; modal provides a deep-dive without navigation. Report Info: Book characteristics (inferred from themes/titles) -> Goal: Analyze/Compare -> Viz/Presentation: Dynamic Doughnut Chart -> Interaction: Chart updates on month selection -> Justification: Provides a quick, visual summary of each month's developmental focus. Library/Method: Chart.js for Canvas chart. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fbfaf8;
+            color: #44403c;
+        }
+        .font-merriweather {
+            font-family: 'Merriweather', serif;
+        }
+        .modal {
+            transition: opacity 0.25s ease;
+        }
+        .modal-content {
+            transition: transform 0.25s ease;
+        }
+        .nav-button.active {
+            background-color: #29a19c;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="font-merriweather text-3xl sm:text-4xl md:text-5xl font-bold text-emerald-800">Year 2 Book Explorer</h1>
+            <p class="text-lg sm:text-xl text-stone-600 mt-2">An Interactive Guide for Ages 2-3</p>
+        </header>
+
+        <section id="introduction" class="bg-white p-6 rounded-2xl shadow-sm mb-8 max-w-4xl mx-auto">
+            <h2 class="font-merriweather text-2xl font-bold text-emerald-700 mb-4">A Year of Budding Independence</h2>
+            <div class="space-y-4 text-stone-700">
+                <p>The second year of life is a time of incredible cognitive and emotional leaps. Children are beginning to understand more complex ideas, express their own opinions, and navigate their feelings. The books in this collection are chosen to support this journey, moving from simple concepts to stories that explore imagination, humor, problem-solving, and social growth.</p>
+                <p>Use the tabs below to explore the curated book list for each month. Click on any book to learn about its developmental significance, and use the chart to see the learning focus for each period.</p>
+            </div>
+        </section>
+
+        <main>
+            <div id="month-navigation" class="flex flex-wrap justify-center gap-2 mb-8"></div>
+            
+            <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm">
+                <h3 id="month-title" class="font-merriweather text-2xl sm:text-3xl font-bold text-center text-emerald-700 mb-2"></h3>
+                <p id="month-theme" class="text-center text-stone-500 font-medium mb-6"></p>
+                <div id="book-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6"></div>
+            </div>
+
+            <section id="analysis" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm mt-8">
+                <h2 class="font-merriweather text-2xl sm:text-3xl font-bold text-center text-emerald-700 mb-4">Developmental Focus</h2>
+                <p id="chart-intro" class="text-center text-stone-600 max-w-2xl mx-auto mb-6">This chart highlights the key developmental areas targeted by the book selection for the chosen month. See how the focus shifts from imagination and humor to more complex themes like problem-solving and social growth as your child develops.</p>
+                <div class="chart-container">
+                    <canvas id="book-type-chart"></canvas>
+                </div>
+            </section>
+        </main>
+
+    </div>
+
+    <div id="book-modal" class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div class="modal-content bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl p-6 sm:p-8 overflow-y-auto transform scale-95">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h2 id="modal-title" class="font-merriweather text-2xl sm:text-3xl font-bold text-emerald-800"></h2>
+                    <p id="modal-author" class="text-lg text-stone-500 mb-4"></p>
+                </div>
+                <button id="close-modal" class="text-3xl text-stone-400 hover:text-emerald-600 transition-colors">&times;</button>
+            </div>
+            <div id="modal-body" class="text-slate-700 space-y-4">
+                <div id="modal-summary"></div>
+                <div id="modal-significance"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const bookData = [
+            { month: 24, theme: "Imagination & Independence", title: "Mix It Up!", author: "Hervé Tullet", type: "Imagination", summary: "An interactive book that encourages kids to mix colors by 'smushing' pages together.", significance: "Teaches color theory in a fun, hands-on way, empowering children to feel like they are creating magic within the book." },
+            { month: 24, theme: "Imagination & Independence", title: "Don't Let the Pigeon Drive the Bus!", author: "Mo Willems", type: "Humor", summary: "A persistent pigeon tries to convince the reader to let him drive the bus.", significance: "This interactive classic gives children a role of responsibility, allowing them to practice saying 'no' and understanding rules in a hilarious context." },
+            { month: 24, theme: "Imagination & Independence", title: "Llama Llama Mad at Mama", author: "Anna Dewdney", type: "Emotional", summary: "Llama Llama gets frustrated and has a tantrum during a shopping trip.", significance: "Perfectly captures a common toddler experience, validating their big feelings and showing a loving resolution, which helps with emotional regulation." },
+            { month: 24, theme: "Imagination & Independence", title: "A Ball for Daisy", author: "Chris Raschka", type: "Emotional", summary: "A wordless picture book about a dog who loves her ball, loses it, and finds happiness again.", significance: "Winner of the Caldecott Medal, its wordless format helps children develop emotional literacy by interpreting the story through expressive illustrations." },
+            { month: 24, theme: "Imagination & Independence", title: "The Cow Loves Cookies", author: "Karma Wilson", type: "Humor", summary: "While other farm animals eat their typical food, the cow has a surprising favorite snack.", significance: "The rhyming text and surprise twist make for a fun read-aloud that plays with expectations and introduces a variety of animal sounds." },
+            { month: 24, theme: "Imagination & Independence", title: "The Little Red Hen", author: "Paul Galdone", type: "Classic", summary: "A hardworking hen asks her lazy friends for help baking bread, but they only want to help eat it.", significance: "A timeless fable that introduces the concepts of teamwork, hard work, and natural consequences in a simple, repetitive story." },
+            { month: 24, theme: "Imagination & Independence", title: "Waiting Is Not Easy!", author: "Mo Willems", type: "Emotional", summary: "Gerald the Elephant struggles with impatience while Piggie has a wonderful surprise for him.", significance: "Hilariously portrays the difficulty of waiting, a relatable struggle for toddlers, and teaches the rewards of patience." },
+            { month: 24, theme: "Imagination & Independence", title: "How Do Dinosaurs Go to School?", author: "Jane Yolen & Mark Teague", type: "Routine", summary: "Giant dinosaurs navigate a typical day at school, showing good and bad behavior.", significance: "Uses humor and a high-interest subject (dinosaurs) to teach school routines and positive social behavior in a memorable way." },
+            { month: 24, theme: "Imagination & Independence", title: "The Grumpy Morning", author: "Pamela Duncan Edwards", type: "Emotional", summary: "A chain reaction of grumpiness spreads through the farm animals until a little worm breaks the cycle.", significance: "A simple story that illustrates how emotions can be contagious and how one small, positive action can change everything." },
+            { month: 24, theme: "Imagination & Independence", title: "Henry at Home", author: "Megan Maynor", type: "Imagination", summary: "A little boy uses his imagination to create grand adventures within his own home.", significance: "Celebrates the power of imaginative play and shows that you don't need to go far to have an adventure." },
+            { month: 25, theme: "Humor & Cause-Effect", title: "The Bad Seed", author: "Jory John", type: "Emotional", summary: "A seed with a bad attitude decides he wants to change his ways.", significance: "A modern classic that explores themes of self-awareness, personal growth, and the power to change, all with a humorous touch." },
+            { month: 25, theme: "Humor & Cause-Effect", title: "The Mixed-Up Chameleon", author: "Eric Carle", type: "Imagination", summary: "A chameleon wishes it could be like other animals, but learns to appreciate being itself.", significance: "With vibrant illustrations, this story teaches about colors, animals, and the importance of self-acceptance." },
+            { month: 25, theme: "Humor & Cause-Effect", title: "If You Give a Pig a Pancake", author: "Laura Numeroff", type: "Classic", summary: "Giving a pig a pancake sets off a chain of comical events.", significance: "Part of a beloved series, this book is a fun and silly introduction to the concept of cause and effect with a circular story structure." },
+            { month: 25, theme: "Humor & Cause-Effect", title: "Frog and Toad Are Friends", author: "Arnold Lobel", type: "Friendship", summary: "Five short stories celebrating the simple, heartwarming adventures of two best friends.", significance: "A Caldecott Honor book, these gentle stories are a perfect introduction to chapter books and beautifully model the give-and-take of true friendship." },
+            { month: 25, theme: "Humor & Cause-Effect", title: "Green Eggs and Ham", author: "Dr. Seuss", type: "Classic", summary: "Sam-I-Am persistently tries to convince a skeptical character to try green eggs and ham.", significance: "A masterpiece of simple vocabulary and repetition, this book is a fun and memorable lesson in trying new things." },
+            { month: 25, theme: "Humor & Cause-Effect", title: "Animal Sounds", author: "DK", type: "Vocabulary", summary: "A book with clear photos and corresponding sounds for various animals.", significance: "Helps toddlers connect animals to the sounds they make, building vocabulary and auditory recognition skills." },
+            { month: 25, theme: "Humor & Cause-Effect", title: "I Want My Hat Back", author: "Jon Klassen", type: "Humor", summary: "A bear politely asks other animals if they have seen his missing hat.", significance: "A Caldecott Honor book known for its minimalist illustrations and deadpan humor, which teaches visual literacy as the reader solves the mystery before the bear does." },
+            { month: 25, theme: "Humor & Cause-Effect", title: "Brownie & Pearl See the Sights", author: "Cynthia Rylant", type: "Imagination", summary: "A little girl and her cat have a big day exploring the city from their apartment window.", significance: "A sweet story that highlights how imagination can turn an ordinary day into an exciting adventure." },
+            { month: 25, theme: "Humor & Cause-Effect", title: "Milo's Hat Trick", author: "Jon Agee", type: "Imagination", summary: "A struggling magician accidentally pulls a bear out of his hat instead of a rabbit.", significance: "A clever and humorous story about unexpected friendship and finding success in surprising ways." },
+            { month: 25, theme: "Humor & Cause-Effect", title: "Ish", author: "Peter H. Reynolds", type: "Creativity", summary: "A boy who loves to draw becomes discouraged by criticism until his sister teaches him the beauty of drawing 'ish-ly'.", significance: "A powerful story about overcoming perfectionism and celebrating the creative process, encouraging children to express themselves freely." },
+            { month: 26, theme: "Creativity & Routines", title: "Journey", author: "Aaron Becker", type: "Imagination", summary: "A lonely girl draws a magic door on her bedroom wall and escapes into a fantastical world.", significance: "A Caldecott Honor-winning wordless book that is a stunning tribute to the power of imagination and creativity to overcome loneliness." },
+            { month: 26, theme: "Creativity & Routines", title: "Potty", author: "Leslie Patricelli", type: "Routine", summary: "A toddler contemplates where all the animals go to the potty before deciding to use the potty, too.", significance: "A simple, humorous, and non-pressuring book that is a favorite for families navigating potty training." },
+            { month: 26, theme: "Creativity & Routines", title: "Mama Zooms", author: "Jane Cowen-Fletcher", type: "Imagination", summary: "A little boy describes the imaginative adventures he has with his mother, who uses a wheelchair.", significance: "A heartwarming story that normalizes physical disability and celebrates the powerful bond between a mother and child." },
+            { month: 26, theme: "Creativity & Routines", title: "Saturday", author: "Oge Mora", type: "Emotional", summary: "A mother and daughter's special Saturday plans keep going wrong, but they learn that being together is what truly matters.", significance: "A Caldecott Honor book that beautifully illustrates resilience and the importance of family connection over perfect plans." },
+            { month: 26, theme: "Creativity & Routines", title: "Knuffle Bunny", author: "Mo Willems", type: "Emotional", summary: "A toddler named Trixie has a meltdown when she realizes her beloved stuffed bunny has been left at the laundromat.", significance: "A Caldecott Honor book that perfectly captures the drama of a toddler's world and the frustration of not being able to communicate with words." },
+            { month: 26, theme: "Creativity & Routines", title: "A Good Day", author: "Kevin Henkes", type: "Emotional", summary: "Several animals are having a bad day until small, positive things happen to turn it all around.", significance: "A simple and reassuring story that shows how a day can change for the better, teaching resilience and optimism." },
+            { month: 26, theme: "Creativity & Routines", title: "A Letter for Bear", author: "Rochelle Draper", type: "Friendship", summary: "A bear learns the joy of writing and receiving letters.", significance: "A sweet story that introduces the concepts of communication and friendship through the timeless act of letter-writing." },
+            { month: 26, theme: "Creativity & Routines", title: "Bear's Loose Tooth", author: "Karma Wilson", type: "Routine", summary: "Bear is worried about his first loose tooth, but his friends are there to reassure him.", significance: "Part of a beloved series, this book addresses a common childhood milestone with warmth and gentle humor, easing potential anxiety." },
+            { month: 26, theme: "Creativity & Routines", title: "Mighty, Mighty Construction Site", author: "Sherri Duskey Rinker", type: "Teamwork", summary: "The trucks from *Goodnight, Goodnight, Construction Site* work together as a team to tackle a big job.", significance: "A bestselling sequel that uses a high-interest topic to teach the value of teamwork and cooperation." },
+            { month: 26, theme: "Creativity & Routines", title: "Daniel Goes to the Potty", author: "Maggie Testa", type: "Routine", summary: "The popular character from *Daniel Tiger's Neighborhood* learns to use the potty.", significance: "Using a familiar and trusted character, this book provides a positive and encouraging guide to a major developmental milestone." },
+            { month: 27, theme: "Problem Solving & Seasons", title: "How to Catch a Star", author: "Oliver Jeffers", type: "Imagination", summary: "A boy tries to figure out how to catch a star of his very own.", significance: "A beautiful story about dreaming big and creative problem-solving, with charming illustrations." },
+            { month: 27, theme: "Problem Solving & Seasons", title: "Swimmy", author: "Leo Lionni", type: "Teamwork", summary: "A little fish figures out how to help his friends swim together to scare away bigger fish.", significance: "A Caldecott Honor classic, this is a powerful and beautifully illustrated fable about the strength of working together." },
+            { month: 27, theme: "Problem Solving & Seasons", title: "A Sick Day for Amos McGee", author: "Philip C. Stead", type: "Friendship", summary: "When a kind zookeeper is too sick to go to work, his animal friends come to his house to take care of him.", significance: "Winner of the Caldecott Medal, this is a gentle, heartwarming story about friendship, empathy, and caring for others." },
+            { month: 27, theme: "Problem Solving & Seasons", title: "The Hat", author: "Jan Brett", type: "Humor", summary: "A hedgehog gets a stocking stuck on his head and pretends it's a hat, much to the amusement of the other animals.", significance: "Jan Brett's stunningly detailed illustrations are full of side stories, encouraging close observation, while the main plot is a humorous tale of making the best of a situation." },
+            { month: 27, theme: "Problem Solving & Seasons", title: "The Rainbow Fish", author: "Marcus Pfister", type: "Friendship", summary: "A beautiful fish with shimmering scales learns that sharing his special scales with others is the key to happiness and friendship.", significance: "An international bestseller, this book uses unique foil-stamped illustrations to tell a simple but powerful story about the joy of sharing." },
+            { month: 27, theme: "Problem Solving & Seasons", title: "Red Sled", author: "Lita Judge", type: "Imagination", summary: "A nearly wordless book where a group of woodland creatures goes on a nighttime sledding adventure.", significance: "The expressive illustrations and onomatopoeic text encourage children to narrate the story themselves, boosting imagination and language skills." },
+            { month: 27, theme: "Problem Solving & Seasons", title: "Dragons Love Tacos", author: "Adam Rubin", type: "Humor", summary: "A boy throws a taco party for dragons, but he has to be very careful to avoid the spicy salsa.", significance: "A wildly popular and hilarious book that is pure, silly fun, perfect for engaging reluctant readers and sparking laughter." },
+            { month: 27, theme: "Problem Solving & Seasons", title: "Winter Is for Snow", author: "Robert Neubecker", type: "Seasonal", summary: "A brother and sister have different opinions about winter, one loving the snow and the other preferring to stay inside.", significance: "A beautifully illustrated story that explores different perspectives and celebrates the simple joys of a snow day." },
+            { month: 27, theme: "Problem Solving & Seasons", title: "Stuck", author: "Oliver Jeffers", type: "Humor", summary: "A boy's kite gets stuck in a tree, and he throws a series of increasingly ridiculous things up to try to get it down.", significance: "A laugh-out-loud story about problem-solving gone wrong, its cumulative and absurd plot is a delight for young children." },
+            { month: 27, theme: "Problem Solving & Seasons", title: "The Storm Whale", author: "Benji Davies", type: "Friendship", summary: "A lonely boy finds a baby whale washed ashore after a storm and secretly cares for it in his bathtub.", significance: "An award-winning and beautifully illustrated story about loneliness and the power of an unlikely friendship." },
+            { month: 28, theme: "Observation & Nature", title: "Freight Train", author: "Donald Crews", type: "Concept", summary: "A train travels through the country, with each car a different color.", significance: "A Caldecott Honor book, its simple, clear design and sense of movement make it a perfect introduction to colors and transportation." },
+            { month: 28, theme: "Observation & Nature", title: "Madeline", author: "Ludwig Bemelmans", type: "Classic", summary: "The story of a brave little girl in a Parisian boarding school.", significance: "A Caldecott Honor book, this timeless classic is beloved for its rhyming text, iconic illustrations, and fearless heroine." },
+            { month: 28, theme: "Observation & Nature", title: "Curious George", author: "H.A. Rey", type: "Classic", summary: "A curious monkey gets into all sorts of trouble after being brought to the city by the Man with the Yellow Hat.", significance: "A beloved character for generations, George's adventures are a fun exploration of curiosity and its consequences." },
+            { month: 28, theme: "Observation & Nature", title: "Harold and the Purple Crayon", author: "Crockett Johnson", type: "Imagination", summary: "A little boy named Harold uses his purple crayon to draw his own world and adventures.", significance: "A classic celebration of creativity, this book shows how imagination has the power to create entire worlds." },
+            { month: 28, theme: "Observation & Nature", title: "We're Going on a Leaf Hunt", author: "Steve Metzger", type: "Seasonal", summary: "Three friends go on an adventure to find different kinds of colorful autumn leaves.", significance: "Set to the rhythm of 'We're Going on a Bear Hunt,' this book is a fun way to learn about seasons and different types of leaves." },
+            { month: 28, theme: "Observation & Nature", title: "Hello, World! My Body", author: "Jill McDonald", type: "Vocabulary", summary: "A simple, non-fiction introduction to the parts of the body.", significance: "Part of a popular series, this book uses clear illustrations and simple labels to help toddlers learn about themselves." },
+            { month: 28, theme: "Observation & Nature", title: "The Gruffalo", author: "Julia Donaldson", type: "Classic", summary: "A clever mouse invents a scary monster called a Gruffalo to scare away predators, only to come face-to-face with his own creation.", significance: "A modern classic with brilliant rhymes and a clever plot, it's a wonderful story about using wit to overcome challenges." },
+            { month: 28, theme: "Observation & Nature", title: "Crash! Boom! A Math Tale", author: "Robie H. Harris", type: "Concept", summary: "An elephant builds and rebuilds a tower of blocks, exploring simple math concepts along the way.", significance: "This book cleverly integrates early math concepts like counting and spatial reasoning into a relatable story about playtime." },
+            { month: 28, theme: "Observation & Nature", title: "Owl Moon", author: "Jane Yolen", type: "Nature", summary: "A father and child go on a quiet, late-night walk in the woods to look for owls.", significance: "Winner of the Caldecott Medal, this is a beautifully written and illustrated book that captures the quiet magic of nature and a special family bond." },
+            { month: 28, theme: "Observation & Nature", title: "On the Launch Pad", author: "Michael Dahl", type: "Concept", summary: "A countdown book that follows a rocket from preparation to blastoff.", significance: "The exciting topic and countdown structure make this a fun and engaging way to practice counting backwards." },
+            { month: 29, theme: "Emotions & Expression", title: "The Day the Crayons Quit", author: "Drew Daywalt", type: "Humor", summary: "A little boy's crayons go on strike and write him letters explaining their grievances.", significance: "A #1 \"New York Times\" bestseller, this brilliantly creative and hilarious book gives personality to everyday objects and is a favorite of children and adults alike." },
+            { month: 29, theme: "Emotions & Expression", title: "Bear Is Not Tired", author: "Ciara Gavin", type: "Routine", summary: "A bear insists he is not tired, even as he goes through all the steps of his bedtime routine.", significance: "A humorous and relatable story for any child who has ever resisted bedtime, with a sweet and funny twist." },
+            { month: 29, theme: "Emotions & Expression", title: "Where the Wild Things Are", author: "Maurice Sendak", type: "Classic", summary: "A boy named Max, sent to his room for misbehaving, sails away to an island of Wild Things and becomes their king.", significance: "Winner of the Caldecott Medal, this iconic book is a profound exploration of managing big feelings and the comfort of returning home." },
+            { month: 29, theme: "Emotions & Expression", title: "The Tale of Peter Rabbit", author: "Beatrix Potter", type: "Classic", summary: "A mischievous rabbit disobeys his mother and gets into trouble in Mr. McGregor's garden.", significance: "A timeless classic that has been loved for over a century, it's a simple but effective story about the consequences of disobedience." },
+            { month: 29, theme: "Emotions & Expression", title: "Mouse Paint", author: "Ellen Stoll Walsh", type: "Concept", summary: "Three white mice discover jars of red, yellow, and blue paint and have fun mixing colors.", significance: "A perfect, simple introduction to the concept of color mixing, told through a charming and easy-to-follow story." },
+            { month: 29, theme: "Emotions & Expression", title: "The Kissing Hand", author: "Audrey Penn", type: "Emotional", summary: "A mother raccoon reassures her little one, who is nervous about starting school, by giving him a 'kissing hand' to take with him.", significance: "A beloved classic, this book provides a beautiful and tangible way to comfort a child dealing with separation anxiety." },
+            { month: 29, theme: "Emotions & Expression", title: "Love Monster", author: "Rachel Bright", type: "Emotional", summary: "A googly-eyed monster tries to find someone to love him in a world of cute, fluffy things.", significance: "A sweet and reassuring story about finding love and acceptance, even when you feel like you don't fit in." },
+            { month: 29, theme: "Emotions & Expression", title: "Olivia", author: "Ian Falconer", type: "Classic", summary: "The story of a precocious and energetic little pig with a big personality.", significance: "A Caldecott Honor book, Olivia is a beloved character who celebrates creativity, confidence, and individuality." },
+            { month: 29, theme: "Emotions & Expression", title: "Silly Sally", author: "Audrey Wood", type: "Humor", summary: "Silly Sally goes to town, walking backwards and upside down, and accumulates a parade of silly followers.", significance: "The cumulative, rhyming text and vibrant, playful illustrations make this a fun and energetic read-aloud that celebrates silliness." },
+            { month: 29, theme: "Emotions & Expression", title: "A Book of Sleep", author: "Il Sung Na", type: "Classic", summary: "A beautifully illustrated look at how different animals sleep.", significance: "Its gentle, lulling text and stunning, dreamy illustrations make it a perfect, calming book for bedtime." },
+            { month: 30, theme: "Confidence & Curiosity", title: "Peach & Blue", author: "Sarah S. Kilborne", type: "Friendship", summary: "A story about a peach and a blue frog who become unlikely friends.", significance: "A gentle tale that explores themes of friendship and looking beyond differences." },
+            { month: 30, theme: "Confidence & Curiosity", title: "The Secret Birthday Message", author: "Eric Carle", type: "Imagination", summary: "A child follows a series of clues and shapes to find their birthday surprise.", significance: "An interactive book that teaches shape recognition and problem-solving in a fun, mysterious way." },
+            { month: 30, theme: "Confidence & Curiosity", title: "Ninja Red Riding Hood", author: "Corey R. Schwartz", type: "Humor", summary: "A clever, rhyming twist on the classic fairy tale where Red Riding Hood is a skilled ninja who can handle the wolf herself.", significance: "An empowering and hilarious fractured fairy tale that celebrates confidence and cleverness." },
+            { month: 30, theme: "Confidence & Curiosity", title: "Iggy Peck, Architect", author: "Andrea Beaty", type: "Creativity", summary: "A boy who loves to build and create is discouraged by his teacher until his passion saves the day.", significance: "Part of a bestselling series, this book is a wonderful celebration of STEM, creativity, and staying true to your passions." },
+            { month: 30, theme: "Confidence & Curiosity", title: "Bear Says Thanks", author: "Karma Wilson", type: "Friendship", summary: "Bear wants to have a feast for his friends but his cupboards are bare. His friends arrive, each bringing food to share.", significance: "A heartwarming story from a beloved series that beautifully illustrates the importance of gratitude and friendship." },
+            { month: 30, theme: "Confidence & Curiosity", title: "Mama, Do You Love Me?", author: "Barbara M. Joosse", type: "Emotional", summary: "A child in the Arctic tests the limits of her mother's love with a series of questions.", significance: "A classic story of unconditional love that also gently introduces elements of Inuit culture." },
+            { month: 30, theme: "Confidence & Curiosity", title: "The Foot Book", author: "Dr. Seuss", type: "Concept", summary: "A classic Dr. Seuss book that explores the concept of opposites through a menagerie of feet.", significance: "Its simple rhymes and silly illustrations make it a fun and effective way to teach the concept of opposites." },
+            { month: 30, theme: "Confidence & Curiosity", title: "Llama Llama Red Pajama", author: "Anna Dewdney", type: "Emotional", summary: "Little Llama has a meltdown at bedtime when his mama doesn't come right away.", significance: "A hugely popular book because it perfectly captures the anxiety a young child can feel at bedtime and offers a loving, reassuring conclusion." },
+            { month: 30, theme: "Confidence & Curiosity", title: "Biscuit", author: "Alyssa Satin Capucilli", type: "Classic", summary: "A little yellow puppy named Biscuit wants just one more thing before going to sleep.", significance: "A beloved early reader classic, its simple, repetitive text is perfect for building reading confidence." },
+            { month: 30, theme: "Confidence & Curiosity", title: "This Moose Belongs to Me", author: "Oliver Jeffers", type: "Humor", summary: "A boy named Wilfred believes he owns a moose, but the moose has other ideas.", significance: "A quirky and humorous story about friendship and the concept of ownership, with charming illustrations." },
+            { month: 31, theme: "Routines & Social Growth", title: "Maisy Goes to Preschool", author: "Lucy Cousins", type: "Routine", summary: "The beloved character Maisy has a fun and busy day at preschool.", significance: "With its bright, simple illustrations, this book provides a positive and reassuring introduction to the preschool experience." },
+            { month: 31, theme: "Routines & Social Growth", title: "Goggles!", author: "Ezra Jack Keats", type: "Classic", summary: "Archie and Peter find a pair of motorcycle goggles but have to outsmart some bigger boys to keep them.", significance: "A Caldecott Honor book that continues the story of Peter from *The Snowy Day*, this is a realistic and engaging story about friendship and problem-solving." },
+            { month: 31, theme: "Routines & Social Growth", title: "Say Hello!", author: "Rachel Isadora", type: "Vocabulary", summary: "A little girl walks through her diverse neighborhood and says 'hello' in many different languages.", significance: "A wonderful introduction to different cultures and languages, celebrating the diversity of a community." },
+            { month: 31, theme: "Routines & Social Growth", title: "Henry and Mudge", author: "Cynthia Rylant", type: "Friendship", summary: "The first book in the classic series about a boy and his very large dog.", significance: "A beloved easy-reader series, these stories beautifully depict the simple, loving bond between a boy and his pet." },
+            { month: 31, theme: "Routines & Social Growth", title: "Bear Counts", author: "Karma Wilson", type: "Concept", summary: "Bear and his friends count the animals in their world in this rhyming story.", significance: "Part of a popular series, this book makes learning numbers a natural part of a sweet story about friendship." },
+            { month: 31, theme: "Routines & Social Growth", title: "The Very Quiet Cricket", author: "Eric Carle", type: "Classic", summary: "A little cricket tries to chirp to say hello to other insects, but can't make a sound until he meets another cricket.", significance: "A classic Eric Carle story about perseverance, with a surprising and rewarding sound chip on the final page." },
+            { month: 31, theme: "Routines & Social Growth", title: "I Will Surprise My Friend!", author: "Mo Willems", type: "Friendship", summary: "Gerald and Piggie decide to surprise each other, with hilarious results.", significance: "An early reader from a beloved series that uses simple text and expressive illustrations to tell a funny story about the joys and pitfalls of friendship." },
+            { month: 31, theme: "Routines & Social Growth", title: "How to Be a Lion", author: "Ed Vere", type: "Emotional", summary: "A gentle lion named Leonard shows that there is more than one way to be a lion.", significance: "An award-winning book with a powerful message about defying stereotypes, celebrating sensitivity, and the courage to be yourself." },
+            { month: 31, theme: "Routines & Social Growth", title: "All Through My Town", author: "Jean Reidy", type: "Concept", summary: "A rhyming tour of a busy town and all the people who help it run.", significance: "A wonderful introduction to community helpers and the different jobs people do, with a cheerful, rhythmic text." },
+            { month: 31, theme: "Routines & Social Growth", title: "Yummy Yucky", author: "Leslie Patricelli", type: "Concept", summary: "A humorous look at things that are yummy to eat (spaghetti) and things that are yucky (worms).", significance: "A simple and funny board book that teaches the concept of opposites in a way that toddlers find hilarious and relatable." },
+            { month: 32, theme: "Discovery & Senses", title: "Eating the Alphabet", author: "Lois Ehlert", type: "Vocabulary", summary: "A vibrant tour of fruits and vegetables from A to Z.", significance: "A classic alphabet book with stunning, colorful illustrations that promotes healthy eating and builds vocabulary." },
+            { month: 32, theme: "Discovery & Senses", title: "The Snowman", author: "Raymond Briggs", type: "Imagination", summary: "A wordless book about a little boy whose snowman comes to life and takes him on a magical flight.", significance: "An iconic and beautiful story, its wordless format allows the child and parent to narrate the adventure themselves, fostering imagination and storytelling skills." },
+            { month: 32, theme: "Discovery & Senses", title: "In the Small, Small Pond", author: "Denise Fleming", type: "Nature", summary: "A rhyming look at the creatures that live in and around a pond through the seasons.", significance: "A Caldecott Honor book, its vibrant illustrations and simple, rhythmic text make it a beautiful introduction to the ecosystem of a pond." },
+            { month: 32, theme: "Discovery & Senses", title: "Horton Hears a Who!", author: "Dr. Seuss", type: "Classic", summary: "An elephant named Horton discovers a tiny world on a speck of dust and protects it, declaring that 'a person's a person, no matter how small.'", significance: "A classic Dr. Seuss story with a profound and timeless message about empathy, perseverance, and standing up for others." },
+            { month: 32, theme: "Discovery & Senses", title: "City Moon", author: "Rachael Cole", type: "Nature", summary: "A boy and his mom go for a nighttime walk to find the moon in the city sky.", significance: "A gentle and beautifully illustrated story that encourages observation and celebrates the quiet wonders of the natural world, even in an urban setting." },
+            { month: 32, theme: "Discovery & Senses", title: "Pick a Pumpkin", author: "Patricia Toht", type: "Seasonal", summary: "A rhyming story that follows a family through the autumn ritual of picking a pumpkin and carving it for Halloween.", significance: "A beautifully illustrated celebration of a beloved seasonal tradition, with a warm and cozy feel." },
+            { month: 32, theme: "Discovery & Senses", title: "Jamberry", author: "Bruce Degen", type: "Rhyme", summary: "A boy and a bear go on a rhyming adventure picking all sorts of delicious berries.", significance: "A classic for its joyful, rollicking rhymes and vibrant illustrations, it's a fun and energetic read-aloud." },
+            { month: 32, theme: "Discovery & Senses", title: "Bear Can't Wait", author: "Karma Wilson", type: "Friendship", summary: "Bear is so excited for his friend's surprise party that he can hardly wait.", significance: "A sweet story from a popular series that explores the feeling of excitement and the importance of patience and friendship." },
+            { month: 32, theme: "Discovery & Senses", title: "There's a Monster in Your Book", author: "Tom Fletcher", type: "Interactive", summary: "An interactive book where the reader must shake, tilt, and turn the book to get a friendly monster out.", significance: "A fun and engaging book that makes the child a key participant in the story, teaching cause and effect in a playful way." },
+            { month: 32, theme: "Discovery & Senses", title: "Pete the Cat: Four Groovy Buttons", author: "Eric Litwin", type: "Classic", summary: "Pete the Cat loses the buttons on his favorite shirt one by one, but he keeps his cool and keeps on singing.", significance: "A popular book that uses a catchy song and a simple story to teach counting backwards and the importance of resilience." },
+            { month: 33, theme: "Friendship & Humor", title: "Knuffle Bunny Too", author: "Mo Willems", type: "Emotional", summary: "Trixie is excited to show off her one-of-a-kind Knuffle Bunny at school, only to discover that her classmate has the exact same one.", significance: "A Caldecott Honor book that hilariously and accurately captures the drama and complexity of a toddler's first friendship crisis." },
+            { month: 33, theme: "Friendship & Humor", title: "Max's Chocolate Chicken", author: "Rosemary Wells", type: "Humor", summary: "Max and his sister Ruby go on an Easter egg hunt, but Max is more interested in eating the chocolate chicken prize.", significance: "A classic story from the beloved Max and Ruby series, it's a humorous and relatable tale of sibling dynamics." },
+            { month: 33, theme: "Friendship & Humor", title: "Interrupting Chicken", author: "David Ezra Stein", type: "Humor", summary: "A little chicken can't help but interrupt her papa as he tries to read her classic fairy tales for bedtime.", significance: "A Caldecott Honor book, this is a brilliantly funny and interactive story that celebrates a child's enthusiasm for stories." },
+            { month: 33, theme: "Friendship & Humor", title: "My Friend Bear", author: "Jez Alborough", type: "Friendship", summary: "A story about the friendship between a boy and his teddy bear.", significance: "A sweet and simple celebration of the important bond a child can have with a special comfort object." },
+            { month: 33, theme: "Friendship & Humor", title: "Pete the Cat: Pete's Big Lunch", author: "James Dean & Eric Litwin", type: "Friendship", summary: "Pete the Cat makes a giant sandwich and invites all his friends to share it with him.", significance: "An early reader that uses simple, repetitive text to tell a great story about the joy of sharing with friends." },
+            { month: 33, theme: "Friendship & Humor", title: "Not Norman: A Goldfish Story", author: "Kelly Bennett", type: "Friendship", summary: "A boy is disappointed with his new pet goldfish, Norman, but he soon discovers that Norman is the perfect pet for him after all.", significance: "A sweet and funny story about looking beyond first impressions and finding friendship in unexpected places." },
+            { month: 33, theme: "Friendship & Humor", title: "We Are in a Book!", author: "Mo Willems", type: "Humor", summary: "Gerald and Piggie realize that they are characters in a book and that someone is reading them.", significance: "A brilliantly clever and interactive book from the Elephant & Piggie series that breaks the fourth wall and makes the child a part of the story." },
+            { month: 33, theme: "Friendship & Humor", title: "Penguin Problems", author: "Jory John", type: "Humor", summary: "A penguin complains about all the little annoyances in his life until a wise walrus helps him see things differently.", significance: "A hilarious book that explores perspective and gratitude with a grumpy but lovable main character." },
+            { month: 33, theme: "Friendship & Humor", title: "Wolfie the Bunny", author: "Ame Dyckman", type: "Friendship", summary: "The Bunny family adopts a wolf cub, much to the suspicion of their daughter, Dot.", significance: "A funny and heartwarming story about sibling rivalry and learning to love a new family member." },
+            { month: 33, theme: "Friendship & Humor", title: "Chickens to the Rescue", author: "John Himmelman", type: "Humor", summary: "A group of chickens comes to the rescue to solve a series of comical problems on the farm.", significance: "A silly and fast-paced story with a fun, repetitive structure that is great for a quick and cheerful read." },
+            { month: 34, theme: "Transitions & Change", title: "Little Blue Truck Leads the Way", author: "Alice Schertle", type: "Classic", summary: "The friendly Little Blue Truck goes to the city and shows the big, busy city vehicles the importance of patience and kindness.", significance: "A popular book in the series that contrasts country and city life and carries a gentle message about politeness and cooperation." },
+            { month: 34, theme: "Transitions & Change", title: "Don't Let the Pigeon Stay Up Late!", author: "Mo Willems", type: "Routine", summary: "The Pigeon uses every excuse in the book to try to avoid going to bed.", significance: "A hilarious and interactive book that puts the child in charge of making sure the Pigeon follows his bedtime routine." },
+            { month: 34, theme: "Transitions & Change", title: "Plant the Tiny Seed", author: "Christie Matheson", type: "Interactive", summary: "An interactive book that invites the child to help plant a seed and watch it grow by pressing, wiggling, and tapping the pages.", significance: "A magical and hands-on way to learn about the life cycle of a plant, showing how small actions can lead to beautiful results." },
+            { month: 34, theme: "Transitions & Change", title: "Llama Llama Misses Mama", author: "Anna Dewdney", type: "Emotional", summary: "Llama Llama is sad and worried on his first day of preschool, but he learns that school is fun and Mama always comes back.", significance: "A perfect and reassuring story for any child dealing with separation anxiety, especially when starting school or daycare." },
+            { month: 34, theme: "Transitions & Change", title: "My Friend is Sad", author: "Mo Willems", type: "Friendship", summary: "Piggie tries everything to cheer up her best friend Gerald the Elephant.", significance: "A simple but profound story from the Elephant & Piggie series that beautifully models what it means to be a good friend and support someone with big feelings." },
+            { month: 34, theme: "Transitions & Change", title: "Pete the Cat and the Missing Cupcakes", author: "James Dean & Eric Litwin", type: "Problem Solving", summary: "Pete and his friends have to solve the mystery of who took the missing cupcakes.", significance: "A fun story that introduces simple problem-solving and counting skills with a popular and beloved character." },
+            { month: 34, theme: "Transitions & Change", title: "Sidewalk Flowers", author: "JonArno Lawson", type: "Imagination", summary: "A wordless book about a little girl who collects wildflowers while walking through the city with her distracted father, and then shares them as small gifts of beauty.", significance: "A beautiful and poignant story that encourages observation and celebrates small acts of kindness and the beauty that can be found in everyday places." },
+            { month: 34, theme: "Transitions & Change", title: "Dragon Was Terrible", author: "Kelly DiPucchio", type: "Humor", summary: "A dragon is being terrible, and the king offers a reward to anyone who can tame him. A little boy succeeds with an unexpected method: reading him a story.", significance: "A funny and charming story that celebrates the power of books and kindness to tame even the wildest of beasts." },
+            { month: 34, theme: "Transitions & Change", title: "Puffin Peter", author: "Michael Morpurgo", type: "Friendship", summary: "A story of two puffins who are best friends and face a great storm together.", significance: "From a renowned author, this is a beautifully told story about friendship, courage, and resilience in the face of challenges." },
+            { month: 34, theme: "Transitions & Change", title: "Ella Sarah Gets Dressed", author: "Margaret Chodos-Irvine", type: "Independence", summary: "A little girl with a big sense of style insists on picking out her own wonderfully mismatched outfit, despite her family's suggestions.", significance: "A Caldecott Honor book that is a perfect celebration of self-expression and a toddler's budding independence." },
+            { month: 35, theme: "Resilience & Belonging", title: "Alexander and the Terrible, Horrible, No Good, Very Bad Day", author: "Judith Viorst", type: "Emotional", summary: "A boy named Alexander has a day where everything goes wrong from the moment he wakes up.", significance: "A classic and relatable story that validates the feeling of having a bad day and teaches that everyone has them sometimes." },
+            { month: 35, theme: "Resilience & Belonging", title: "Peppa Pig: Peppa's First Sleepover", author: "Neville Astley & Mark Baker", type: "Routine", summary: "The popular character Peppa Pig goes to her very first sleepover.", significance: "Using a familiar character, this book can help prepare a child for a new experience like a sleepover, making it feel less intimidating." },
+            { month: 35, theme: "Resilience & Belonging", title: "The Pigeon Finds a Hot Dog!", author: "Mo Willems", type: "Humor", summary: "The Pigeon is delighted to find a hot dog, until a clever little duckling comes along and tries to get a share.", significance: "A hilarious story that introduces the concepts of negotiation and sharing in a way that is highly entertaining for young children." },
+            { month: 35, theme: "Resilience & Belonging", title: "There's a Wocket in My Pocket!", author: "Dr. Seuss", type: "Rhyme", summary: "A classic Dr. Seuss book that introduces a host of silly creatures with rhyming names who live in a boy's house.", significance: "A wonderful book for developing phonological awareness, its playful rhymes and made-up words are a joyful celebration of language." },
+            { month: 35, theme: "Resilience & Belonging", title: "I'm a Frog!", author: "Mo Willems", type: "Imagination", summary: "Piggie pretends to be a frog, much to the confusion of her logical friend Gerald.", significance: "A funny Elephant & Piggie story that celebrates the joy of pretend play and imagination." },
+            { month: 35, theme: "Resilience & Belonging", title: "How Rocket Learned to Read", author: "Tad Hills", type: "Classic", summary: "A little dog named Rocket learns to love reading with the help of a patient little yellow bird.", significance: "A sweet and inspiring story that beautifully illustrates the journey of learning to read and the magic of stories." },
+            { month: 35, theme: "Resilience & Belonging", title: "Mr. Brown Can Moo! Can You?", author: "Dr. Seuss", type: "Concept", summary: "A book all about the wonderful sounds Mr. Brown can make, from a cow's moo to the sizzle of an egg.", significance: "A Dr. Seuss classic that is a fun and energetic exploration of onomatopoeia, encouraging children to play with sounds." },
+            { month: 35, theme: "Resilience & Belonging", title: "Ricky, the Rock That Couldn't Roll", author: "Mr. Jay", type: "Friendship", summary: "A group of rocks loves to roll down the hill together, but their friend Ricky is flat on one side and can't join in. His friends work together to help him.", significance: "A popular rhyming story with a powerful message about inclusivity, teamwork, and helping friends overcome challenges." },
+            { month: 35, theme: "Resilience & Belonging", title: "Tyrannosaurus Wrecks!", author: "Sudipta Bardhan-Quallen", type: "Friendship", summary: "A big, clumsy dinosaur just wants to play with his friends, but he keeps accidentally wrecking their games.", significance: "A funny and relatable story about learning to control your body and finding a way to play that works for everyone." },
+            { month: 35, theme: "Resilience & Belonging", title: "Goodbye Friend, Hello Friend", author: "Cori Doerrfeld", type: "Emotional", summary: "A gentle story that explores the difficult concept of goodbyes and the hope of new hellos.", significance: "A beautiful and reassuring book that helps children understand that even though goodbyes can be sad, they also make way for new beginnings." }
+        ];
+
+        const monthNavigation = document.getElementById('month-navigation');
+        const monthTitle = document.getElementById('month-title');
+        const monthTheme = document.getElementById('month-theme');
+        const bookGrid = document.getElementById('book-grid');
+        const modal = document.getElementById('book-modal');
+        const closeModalButton = document.getElementById('close-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalAuthor = document.getElementById('modal-author');
+        const modalSummary = document.getElementById('modal-summary');
+        const modalSignificance = document.getElementById('modal-significance');
+        
+        let currentMonth = 24;
+        let chart;
+
+        const monthInfo = {};
+        bookData.forEach(book => {
+            if (!monthInfo[book.month]) {
+                monthInfo[book.month] = { theme: book.theme, books: [] };
+            }
+            monthInfo[book.month].books.push(book);
+        });
+
+        function renderNavigation() {
+            Object.keys(monthInfo).forEach(monthNum => {
+                const button = document.createElement('button');
+                button.textContent = `Month ${monthNum}`;
+                button.classList.add('nav-button', 'px-3', 'py-1', 'sm:px-4', 'sm:py-2', 'rounded-full', 'text-sm', 'sm:text-base', 'font-semibold', 'text-sky-800', 'bg-white', 'hover:bg-sky-100', 'transition-all', 'duration-200', 'shadow-sm');
+                if (parseInt(monthNum) === currentMonth) {
+                    button.classList.add('active');
+                }
+                button.addEventListener('click', () => {
+                    currentMonth = parseInt(monthNum);
+                    renderContent();
+                    updateActiveButton();
+                });
+                monthNavigation.appendChild(button);
+            });
+        }
+
+        function updateActiveButton() {
+            const buttons = document.querySelectorAll('.nav-button');
+            buttons.forEach(button => {
+                if (parseInt(button.textContent.split(' ')[1]) === currentMonth) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+        }
+
+        function renderContent() {
+            const currentMonthData = monthInfo[currentMonth];
+            monthTitle.textContent = `Month ${currentMonth}`;
+            monthTheme.textContent = currentMonthData.theme;
+            bookGrid.innerHTML = '';
+            
+            currentMonthData.books.forEach(book => {
+                const card = document.createElement('div');
+                card.className = 'bg-emerald-50 rounded-lg p-3 text-center cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105';
+                card.innerHTML = `
+                    <div class="aspect-square bg-amber-100 rounded-md flex items-center justify-center mb-2">
+                        <span class="text-4xl">📚</span>
+                    </div>
+                    <h4 class="font-bold text-sm text-emerald-900 truncate">${book.title}</h4>
+                    <p class="text-xs text-stone-500 truncate">${book.author}</p>
+                `;
+                card.addEventListener('click', () => showModal(book));
+                bookGrid.appendChild(card);
+            });
+            updateChart(currentMonth);
+        }
+
+        function showModal(book) {
+            modalTitle.textContent = book.title;
+            modalAuthor.textContent = book.author;
+            modalSummary.innerHTML = `<p class="mb-2">${book.summary}</p>`;
+            modalSignificance.innerHTML = `<p>${book.significance}</p>`;
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.remove('scale-95');
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.add('scale-95');
+        }
+
+        function updateChart(month) {
+            const booksForMonth = monthInfo[month].books;
+            const typeCounts = booksForMonth.reduce((acc, book) => {
+                acc[book.type] = (acc[book.type] || 0) + 1;
+                return acc;
+            }, {});
+
+            const labels = Object.keys(typeCounts);
+            const data = Object.values(typeCounts);
+
+            if (chart) {
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = data;
+                chart.update();
+            } else {
+                const ctx = document.getElementById('book-type-chart').getContext('2d');
+                chart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Book Types',
+                            data: data,
+                            backgroundColor: [
+                                '#34d399', '#f59e0b', '#8b5cf6', '#6b7280', 
+                                '#ec4899', '#14b8a6', '#ef4444', '#3b82f6'
+                            ],
+                            borderColor: '#ffffff',
+                            borderWidth: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: { family: "'Inter', sans-serif", size: 12 },
+                                    color: '#334155',
+                                    padding: 15
+                                }
+                            },
+                            tooltip: {
+                                bodyFont: { family: "'Inter', sans-serif" },
+                                titleFont: { family: "'Inter', sans-serif" }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        closeModalButton.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape") {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNavigation();
+            renderContent();
+        });
+    </script>
+</body>
+</html>
