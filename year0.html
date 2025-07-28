@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Foundation of Wonder: 120 Best Books for Baby's First Year</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Lora:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals (Amber, Stone) with Teal accents -->
+    <!-- Application Structure Plan: A single-page dashboard with tab-based navigation for each of the 12 months. This structure was chosen to organize the 120 books into manageable, non-scrolling sections, making exploration easy and focused. Clicking a book card opens a modal with details, preventing UI clutter. An interactive chart provides an at-a-glance analysis of book types per month, adding a data-driven layer to the report. -->
+    <!-- Visualization & Content Choices: Report Info: 120 books over 12 months -> Goal: Organize/Explore -> Viz/Presentation: Interactive monthly tabs with a grid of book cards -> Interaction: Click card to open a detail modal -> Justification: Breaks down a large dataset into user-friendly chunks, modal provides deep-dive without navigation. Report Info: Book characteristics (e.g., interactive, classic) -> Goal: Analyze/Compare -> Viz/Presentation: Dynamic Doughnut Chart -> Interaction: Chart updates on month selection -> Justification: Provides a quick, visual summary of each month's content focus. Library/Method: Chart.js for Canvas chart. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfbf7;
+            color: #4a4a4a;
+        }
+        .font-lora {
+            font-family: 'Lora', serif;
+        }
+        .modal {
+            transition: opacity 0.25s ease;
+        }
+        .modal-content {
+            transition: transform 0.25s ease;
+        }
+        .nav-button.active {
+            background-color: #0d9488;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="font-lora text-3xl sm:text-4xl md:text-5xl font-bold text-teal-800">A Foundation of Wonder</h1>
+            <p class="text-lg sm:text-xl text-stone-600 mt-2">The 120 Best Books for Your Baby's First Year</p>
+        </header>
+
+        <section id="introduction" class="bg-white p-6 rounded-2xl shadow-sm mb-8 max-w-4xl mx-auto">
+            <h2 class="font-lora text-2xl font-bold text-teal-700 mb-4">The Magic of Reading from Day One</h2>
+            <div class="space-y-4 text-stone-700">
+                <p>The quiet moments spent with a book are some of the most profound gifts you can give your child, starting from their very first days. While a newborn may not understand the words or follow a plot, the act of reading aloud lays a crucial foundation for their development in countless ways.</p>
+                <p>The gentle rhythm of your voice is a source of comfort and security, strengthening the emotional bond between you and your baby. This shared experience creates a cherished routine, a peaceful ritual in a world of new and overwhelming sensations. As you read, your baby is also absorbing the fundamental sounds and cadences of language, which is the very first step toward developing their own communication skills.</p>
+                <p>Furthermore, the simple, high-contrast images, varied textures, and interactive elements found in baby books are designed to captivate a newborn's developing senses, stimulating their visual, tactile, and cognitive growth. Each page turned is an exercise in focus and a gentle introduction to the concepts of shapes, colors, and the world around them.</p>
+            </div>
+        </section>
+
+        <main>
+            <div id="month-navigation" class="flex flex-wrap justify-center gap-2 mb-8"></div>
+            
+            <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm">
+                <h3 id="month-title" class="font-lora text-2xl sm:text-3xl font-bold text-center text-teal-700 mb-6"></h3>
+                <div id="book-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6"></div>
+            </div>
+
+            <section id="analysis" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm mt-8">
+                <h2 class="font-lora text-2xl sm:text-3xl font-bold text-center text-teal-700 mb-4">Monthly Focus</h2>
+                <p id="chart-intro" class="text-center text-stone-600 max-w-2xl mx-auto mb-6">Each month's book selection is tailored to your baby's developmental stage. This chart shows the blend of book types for the selected month, from sensory-rich touch-and-feel books to classics that build language and routine.</p>
+                <div class="chart-container">
+                    <canvas id="book-type-chart"></canvas>
+                </div>
+            </section>
+        </main>
+
+    </div>
+
+    <div id="book-modal" class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div class="modal-content bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl p-6 sm:p-8 overflow-y-auto transform scale-95">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h2 id="modal-title" class="font-lora text-2xl sm:text-3xl font-bold text-teal-800"></h2>
+                    <p id="modal-author" class="text-lg text-stone-500 mb-4"></p>
+                </div>
+                <button id="close-modal" class="text-3xl text-stone-400 hover:text-teal-600 transition-colors">&times;</button>
+            </div>
+            <div id="modal-body" class="text-stone-700 space-y-4">
+                <div id="modal-summary"></div>
+                <div id="modal-acclaim"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const bookData = [
+            { month: 0, title: "Goodnight Moon", author: "Margaret Wise Brown", type: "Classic", summary: "In a great green room, a little bunny says goodnight to everything in sight. The book's gentle, repetitive text and lulling rhythm make it the perfect bedtime story.", acclaim: "A timeless classic and a staple in nurseries worldwide. Recognized by the New York Public Library as a \"Book of the Century.\" Its significance lies in its ability to provide a comforting and predictable bedtime ritual, helping babies feel secure." },
+            { month: 0, title: "Brown Bear, Brown Bear, What Do You See?", author: "Bill Martin Jr. & Eric Carle", type: "Classic", summary: "A colorful journey introducing a new animal and color on each page through a repetitive, question-and-answer format.", acclaim: "Celebrated for its vibrant tissue-paper collage illustrations and rhythmic text. A \"Reading Rainbow\" book award winner. Its bold, high-contrast images and simple language are ideal for early language development and visual stimulation." },
+            { month: 0, title: "Dear Zoo", author: "Rod Campbell", type: "Interactive", summary: "A child writes to the zoo for a pet, receiving a series of unsuitable animals under interactive flaps until the perfect one arrives.", acclaim: "An international bestseller praised for its interactive lift-the-flap design. It encourages fine motor skills and teaches object permanence—the understanding that things exist even when hidden." },
+            { month: 0, title: "Welcome, Little One", author: "Sandra Magsamen", type: "Emotional", summary: "A heartwarming celebration of a new baby's arrival, filled with messages of love, dreams, and the journey ahead.", acclaim: "A bestseller from an award-winning author. This book is significant for its focus on the emotional bond between parent and child, communicating affection and security through loving words." },
+            { month: 0, title: "I Kissed the Baby!", author: "Mary Murphy", type: "Visual", summary: "Various animals joyfully announce they have seen and kissed the baby, illustrated with cheerful, high-contrast black-and-white images.", acclaim: "A \"Kirkus Reviews Editors' Choice\" book, praised by child development experts for its use of high-contrast images that are known to captivate and stimulate a baby's developing vision." },
+            { month: 0, title: "From Head to Toe", author: "Eric Carle", type: "Interactive", summary: "An interactive book inviting young children to wiggle, stomp, and clap along with a variety of animals.", acclaim: "A \"Publishers Weekly\" bestseller. This book is a wonderful introduction to different parts of the body and encourages movement and imitation, which are key aspects of early motor development." },
+            { month: 0, title: "Global Babies", author: "The Global Fund for Children", type: "Visual", summary: "A beautiful board book featuring stunning photographs of babies from around the world, celebrating diversity.", acclaim: "Recipient of the \"Oppenheim Toy Portfolio Gold Seal Award.\" Its significance lies in the power of real faces; babies are naturally drawn to looking at other faces, fostering visual engagement and early social recognition." },
+            { month: 0, title: "Baby Animals", author: "National Geographic Kids", type: "Vocabulary", summary: "Introduces babies to the animal world through vibrant, high-quality photographs of baby animals.", acclaim: "Praised for its engaging and educational content. The real-world images help babies connect pictures with the world around them, fostering an early appreciation for nature." },
+            { month: 0, title: "I Went Walking", author: "Sue Williams", type: "Classic", summary: "A child walks and encounters a series of colorful farm animals. The book features predictable, repetitive text and charming illustrations.", acclaim: "An award-winning Australian classic honored by the \"Children's Book Council of Australia.\" Its repetitive structure helps babies anticipate what comes next, a key pre-reading skill." },
+            { month: 0, title: "First 100 Words", author: "Roger Priddy", type: "Vocabulary", summary: "A bright and colorful vocabulary-builder, featuring 100 clear photographs of everyday objects with simple labels.", acclaim: "A global bestseller. This book is a visual dictionary for a baby's world. Pointing to pictures and naming objects is a powerful way to build language skills and make connections between words and things." },
+            { month: 1, title: "Good Night, Owl", author: "Pat Hutchins", type: "Classic", summary: "Poor Owl is trying to sleep, but the other woodland animals are making too much noise. The story builds with a chorus of animal sounds until night falls and Owl gets his turn to be noisy.", acclaim: "A classic since 1972. It's significant for its repetitive structure and focus on animal sounds, which is excellent for auditory development and teaching cause and effect." },
+            { month: 1, title: "Baby Farm Animals", author: "Garth Williams", type: "Visual", summary: "A simple, beautifully illustrated book showcasing adorable farm animals. The gentle images are perfect for young eyes.", acclaim: "Illustrated by the legendary artist of *Charlotte's Web*. Its significance is in its soft, classic art style that provides a calm and soothing visual experience for a baby." },
+            { month: 1, title: "I'm a Little Teapot", author: "Annie Kubler", type: "Rhyme", summary: "This board book brings the classic nursery rhyme to life with sweet illustrations and simple text, perfect for singing along.", acclaim: "Part of a popular series of nursery rhyme books. It's important for its connection between song and text, which helps develop rhythm and language skills." },
+            { month: 1, title: "Sleepyheads", author: "Sandra J. Howatt", type: "Classic", summary: "A gentle, rhyming tour of the different places animals and people sleep, from a bug in a rug to a whale in the sea.", acclaim: "Praised for its soothing rhymes and dreamy illustrations. It's a perfect bedtime book that introduces a variety of animals while reinforcing a peaceful sleep routine." },
+            { month: 1, title: "Noisy Farm", author: "Tiger Tales", type: "Interactive", summary: "An interactive sound book where babies can press buttons to hear the sounds of their favorite farm animals.", acclaim: "A popular title in the interactive book category. Its significance lies in teaching cause and effect (pressing a button creates a sound) and helping babies associate animals with their sounds." },
+            { month: 1, title: "Big Red Barn", author: "Margaret Wise Brown", type: "Classic", summary: "A gentle story describing a day on a farm, from the rooster's crow at dawn to the animals sleeping under the moon.", acclaim: "From the author of *Goodnight Moon*, this book is celebrated for its peaceful, rhyming text and calming atmosphere, making it another ideal bedtime read." },
+            { month: 1, title: "My First Counting Book", author: "DK", type: "Vocabulary", summary: "A visually engaging board book that introduces numbers and counting with bright, clear photographs of objects for babies to count.", acclaim: "DK books are renowned for their high-quality photography and educational value. This book introduces early math concepts in a simple, visually appealing way." },
+            { month: 1, title: "Little Owl's Night", author: "Divya Srinivasan", type: "Classic", summary: "Little Owl stays up all night and sees all the wonderful things the woods have to offer after the sun goes down, from a skunk family to busy beavers.", acclaim: "A \"New York Times\" Notable Children's Book. It offers a gentle, positive perspective on the night, which can be comforting for young children." },
+            { month: 1, title: "Hand, Hand, Fingers, Thumb", author: "Al Perkins", type: "Rhyme", summary: "A troop of monkeys uses their hands, fingers, and thumbs to drum on a drum in a catchy, rhythmic celebration.", acclaim: "A Dr. Seuss Beginner Book classic. Its infectious rhythm and rhyme make it incredibly fun to read aloud, helping babies develop an ear for language patterns." },
+            { month: 1, title: "Black and White", author: "Tana Hoban", type: "Visual", summary: "A wordless board book filled with bold, high-contrast, black-and-white silhouette images of familiar objects.", acclaim: "Tana Hoban was a pioneer of early-childhood photography books. This book is specifically designed to stimulate a newborn's developing vision, which is most attuned to high-contrast patterns." },
+            { month: 2, title: "Baby Faces", author: "Margaret Miller", type: "Visual", summary: "This book features clear, expressive photographs of babies showing different emotions like happy, sad, and sleepy.", acclaim: "A classic in its genre. It's significant because babies are hardwired to be fascinated by human faces. This book helps with early emotional recognition and social development." },
+            { month: 2, title: "Where Is Baby?", author: "Karen Katz", type: "Interactive", summary: "A lift-the-flap book where a baby is hiding in various places around the house, encouraging the reader to find them.", acclaim: "Karen Katz's lift-the-flap books are bestsellers. This book is a fun way to play peekaboo, reinforcing the concept of object permanence and engaging a baby's natural curiosity." },
+            { month: 2, title: "That's Not My Puppy", author: "Fiona Watt", type: "Sensory", summary: "Part of the popular \"That's Not My...\" series, this touch-and-feel book lets babies explore different textures on each page as they search for their puppy.", acclaim: "An award-winning series that has sold millions of copies. Its significance is in its tactile stimulation, which is crucial for sensory development in babies." },
+            { month: 2, title: "Good Night, Sleep Tight", author: "Mem Fox", type: "Rhyme", summary: "A charming story where a babysitter recites classic nursery rhymes to two children to help them fall asleep.", acclaim: "From a celebrated children's author, this book is praised for weaving beloved nursery rhymes into a sweet narrative, reinforcing cultural literacy and language skills." },
+            { month: 2, title: "Peek-a-Boo Baby", author: "DK", type: "Interactive", summary: "A large board book with giant flaps to lift, revealing adorable babies and fun surprises.", acclaim: "Praised for its sturdy construction and engaging, oversized flaps. It enhances fine motor skills and makes the game of peekaboo exciting and interactive." },
+            { month: 2, title: "First 100 Animals", author: "Roger Priddy", type: "Vocabulary", summary: "A companion to *First 100 Words*, this book features 100 clear photographs of different animals from around the world.", acclaim: "Another bestseller in the Priddy series. It's an excellent tool for expanding a baby's vocabulary and introducing them to the diversity of the animal kingdom." },
+            { month: 2, title: "Baby's Colors", author: "DK", type: "Vocabulary", summary: "A vibrant board book that introduces basic colors using bright, appealing photographs of everyday objects.", acclaim: "A valuable early learning tool. By associating colors with familiar objects, it helps build a baby's understanding of the world and develops visual discrimination skills." },
+            { month: 2, title: "Little Blue Truck's Christmas", author: "Alice Schertle", type: "Classic", summary: "Little Blue Truck is on a mission to deliver Christmas trees to his animal friends. The book features festive flashing lights on the final page.", acclaim: "A beloved installment in the bestselling *Little Blue Truck* series. It's a heartwarming story about friendship and giving, with a fun, visually stimulating surprise at the end." },
+            { month: 2, title: "My Big Animal Book", author: "Roger Priddy", type: "Vocabulary", summary: "An oversized board book with large, colorful photographs of animals, grouped into categories like \"pets\" and \"farm animals.\"", acclaim: "Praised for its large format and clear images. The size makes it easy for little hands to handle, and the categorization helps babies begin to make connections and understand groups." },
+            { month: 2, title: "This Little Chick", author: "John Lawrence", type: "Visual", summary: "A beautifully illustrated story that follows a little chick as he meets other farm animals and learns their sounds.", acclaim: "Celebrated for its stunning and unique linocut illustrations. It provides a rich, artistic visual experience while teaching animal sounds in a narrative format." },
+            { month: 3, title: "Baby's First Colors", author: "DK", type: "Vocabulary", summary: "A simple and effective introduction to colors, featuring bold text and clear photographs of objects for each color.", acclaim: "A durable and well-designed learning tool. It reinforces color recognition, an important cognitive milestone for babies." },
+            { month: 3, title: "The Little Mouse, The Red Ripe Strawberry, and The Big Hungry Bear", author: "Don & Audrey Wood", type: "Classic", summary: "A little mouse tries to hide a delicious strawberry from a big, hungry bear. The narrator speaks directly to the mouse, creating an interactive feel.", acclaim: "An award-winning classic beloved for its suspenseful and humorous tone. For babies, the expressive illustrations and direct-address narrative are highly engaging." },
+            { month: 3, title: "Baby Signs", author: "Nancy Cadjan", type: "Interactive", summary: "An introductory guide to simple sign language for babies, helping them communicate basic needs and wants before they can speak.", acclaim: "A practical tool for parents. Introducing sign language can reduce frustration and enhance early communication, strengthening the parent-child bond." },
+            { month: 3, title: "Barnyard Dance", author: "Sandra Boynton", type: "Interactive", summary: "A lively book that invites readers to stomp their feet, clap their hands, and spin around with a cast of energetic farm animals.", acclaim: "A bestselling Boynton classic. Its infectious rhythm and call to action make it a joyful, physical reading experience that promotes motor skills and listening." },
+            { month: 3, title: "Farm Animals", author: "Roger Priddy", type: "Sensory", summary: "A touch-and-feel book featuring different farm animals, with various textures for babies to explore.", acclaim: "A popular sensory book. Tactile exploration is a key way babies learn about their environment, and this book provides a safe and fun way to do so." },
+            { month: 3, title: "The Going to Sleep Book", author: "Sandra Boynton", type: "Classic", summary: "A group of silly animals on a boat gets ready for bed, from putting on pajamas to brushing their teeth.", acclaim: "A favorite bedtime story for millions. It gently introduces the steps of a bedtime routine in a fun, non-demanding way, making it a comforting end-of-day read." },
+            { month: 3, title: "Baby Loves Summer", author: "Karen Katz", type: "Interactive", summary: "A lift-the-flap book where a baby discovers all the fun things about summer, like playing in the sandbox and eating a popsicle.", acclaim: "Part of a popular seasonal series. It helps babies connect books to their own experiences and introduces vocabulary related to different seasons." },
+            { month: 3, title: "Row, Row, Row Your Boat", author: "Jane Cabrera", type: "Rhyme", summary: "This book expands on the classic nursery rhyme, with a little bear rowing his boat and meeting different jungle animals along the way.", acclaim: "Praised for its bright, cheerful illustrations. Combining singing with reading helps reinforce language patterns and makes story time more interactive and fun." },
+            { month: 3, title: "Good Night, Gorilla", author: "Peggy Rathmann", type: "Classic", summary: "A nearly wordless book where a mischievous gorilla steals the zookeeper's keys and lets all the animals out of their cages to follow him home to bed.", acclaim: "A Caldecott Honor book. Its visual storytelling is perfect for babies, encouraging them to look closely at the pictures to understand the humorous plot." },
+            { month: 3, title: "My First ABC", author: "DK", type: "Vocabulary", summary: "A clear and simple alphabet book that pairs each letter with a bright photograph of a familiar object.", acclaim: "An essential early learning tool. It provides a strong foundation for letter recognition, which is a fundamental pre-reading skill." },
+            { month: 4, title: "Baby Touch and Feel: Farm", author: "DK", type: "Sensory", summary: "An interactive board book with various textures to feel, from a sheep's fluffy wool to a pig's smooth snout.", acclaim: "Part of a bestselling series. It's designed to stimulate a baby's senses and encourage tactile exploration, which is crucial for cognitive development." },
+            { month: 4, title: "Ten Little Fingers and Ten Little Toes", author: "Mem Fox", type: "Emotional", summary: "A celebration of babies all over the world, highlighting that despite their differences, they all have ten little fingers and ten little toes.", acclaim: "An award-winning book beloved for its inclusive message and gentle, rhyming text. It's a wonderful way to teach love and acceptance from the very beginning." },
+            { month: 4, title: "Where's the Baby?", author: "Britta Teckentrup", type: "Interactive", summary: "A hide-and-seek book with soft felt flaps to lift, revealing adorable baby animals hiding from their parents.", acclaim: "Praised for its soft, durable felt flaps that are easy for little hands to grasp. It enhances fine motor skills and makes the concept of object permanence fun." },
+            { month: 4, title: "TouchThinkLearn: Animals", author: "Xavier Deneux", type: "Sensory", summary: "A unique book with raised, die-cut shapes on one side that fit into scooped-out shapes on the other, creating an interactive learning experience.", acclaim: "An innovative and award-winning book. It's significant for its multi-sensory approach, helping babies learn concepts through both sight and touch." },
+            { month: 4, title: "Hug", author: "Jez Alborough", type: "Emotional", summary: "A little chimpanzee named Bobo wanders through the jungle looking for a hug, seeing all the other animal families embracing.", acclaim: "A heartwarming story told with very few words. Its power lies in its expressive illustrations, which convey emotion and the importance of affection and family." },
+            { month: 4, title: "Goodnight, My Duckling", author: "Nancy Tafuri", type: "Classic", summary: "A mother duck searches for her missing duckling at bedtime, calling for him across the pond until he is found safe and sound.", acclaim: "A gentle and reassuring story. It addresses the common childhood fear of separation in a comforting way, reinforcing the security of a parent's love." },
+            { month: 4, title: "I Like It When...", author: "Mary Murphy", type: "Emotional", summary: "A sweet and simple book that describes the loving interactions between a little penguin and a big penguin, like holding hands and kissing goodnight.", acclaim: "Praised for its simple, loving message. It's a perfect book for cuddling and reinforcing the affectionate bond between a baby and their caregiver." },
+            { month: 4, title: "All of Baby, Nose to Toes", author: "Victoria Adler", type: "Interactive", summary: "A joyful, rhyming celebration of a baby's body, from their eyes and ears to their chubby knees and tiny toes.", acclaim: "A wonderful book for interactive reading. It encourages parents to kiss and tickle their baby as they read, making it a fun and loving way to teach body parts." },
+            { month: 4, title: "Quiet Loud", author: "Leslie Patricelli", type: "Concept", summary: "A humorous board book that explores the concept of opposites through simple illustrations of things that are quiet (a goldfish) and things that are loud (a burp).", acclaim: "A popular book from a beloved author. It introduces the concept of opposites in a funny and relatable way, which is an important early cognitive skill." },
+            { month: 4, title: "Yawn", author: "Sally Symes", type: "Interactive", summary: "A sleepy cat's yawn spreads contagiously to a host of other animals, from a snake to a hippo, until everyone is ready for bed.", acclaim: "Praised for its clever die-cut design and soothing, repetitive nature. It's a perfect bedtime book that visually demonstrates the winding-down process for sleep." },
+            { month: 5, title: "The Very Hungry Caterpillar", author: "Eric Carle", type: "Classic", summary: "A caterpillar eats his way through a wide variety of foods before pupating and emerging as a beautiful butterfly.", acclaim: "One of the most famous and beloved children's books of all time. It brilliantly teaches the days of the week, counting, and the life cycle of a butterfly in an engaging, interactive format." },
+            { month: 5, title: "Maisy Goes to Bed", author: "Lucy Cousins", type: "Classic", summary: "This book follows the popular character Maisy Mouse as she goes through her simple bedtime routine.", acclaim: "The Maisy series is a global success. This book is significant for its clear, bold illustrations and its simple depiction of a comforting routine, which can help babies understand their own bedtime rituals." },
+            { month: 5, title: "Gossie", author: "Olivier Dunrea", type: "Classic", summary: "Gossie is a little gosling who loves her bright red boots and wears them every day, until one day they go missing.", acclaim: "A charming and award-winning book. It's a simple story about ownership and friendship that resonates with young children, and the illustrations are sweet and expressive." },
+            { month: 5, title: "Baby Says Peekaboo!", author: "DK", type: "Interactive", summary: "An interactive peekaboo book with large, sturdy flaps that reveal different babies and playful words.", acclaim: "A well-designed interactive book. It supports fine motor development and reinforces object permanence while making reading a fun and engaging game." },
+            { month: 5, title: "I Love You, Good Night", author: "Jon Buller & Susan Schade", type: "Emotional", summary: "A sweet and simple bedtime book where a parent tells their little one all the ways they are loved as they drift off to sleep.", acclaim: "Praised for its reassuring and loving message. It's a perfect book for a final cuddle, strengthening the emotional security of a baby." },
+            { month: 5, title: "Tails", author: "Matthew Van Fleet", type: "Sensory", summary: "An interactive, multi-sensory book that explores the different tails of various animals, with textures to feel, tabs to pull, and flaps to lift.", acclaim: "A \"New York Times\" bestseller. It's a brilliantly engineered book that engages multiple senses, making it a rich learning experience for babies." },
+            { month: 5, title: "Each Peach Pear Plum", author: "Janet & Allan Ahlberg", type: "Classic", summary: "A classic \"I Spy\" book that invites the reader to find familiar nursery rhyme and fairy tale characters hidden in the detailed illustrations.", acclaim: "Winner of the prestigious Kate Greenaway Medal. It's a wonderful book for developing visual skills and introducing a baby to the world of classic children's literature." },
+            { month: 5, title: "Big Dog...Little Dog", author: "P.D. Eastman", type: "Concept", summary: "A simple and humorous story about two dogs, Fred and Ted, who are opposites in every way but are the best of friends.", acclaim: "A Dr. Seuss Beginner Book classic. It introduces the concept of opposites in a fun, narrative format that is easy for young minds to grasp." },
+            { month: 5, title: "The Snowy Day", author: "Ezra Jack Keats", type: "Classic", summary: "A beautiful story about a little boy named Peter who explores his neighborhood after the first snowfall of the season.", acclaim: "A groundbreaking book that won the Caldecott Medal. It was one of the first mainstream picture books to feature an African American protagonist and is celebrated for its stunning collage art and quiet, wondrous tone." },
+            { month: 5, title: "Is Your Mama a Llama?", author: "Deborah Guarino", type: "Rhyme", summary: "A little llama asks his animal friends if their mamas are llamas, leading to a rhyming riddle on each page that describes the mother.", acclaim: "An award-winning and popular read-aloud. Its rhyming, repetitive, and interactive riddle format makes it highly engaging and fun for babies and toddlers." },
+            { month: 6, title: "Bear Snores On", author: "Karma Wilson", type: "Classic", summary: "While Bear hibernates in his cave, a host of other animals sneak in to have a party, but their fun wakes the sleeping bear.", acclaim: "A \"New York Times\" bestseller. Its wonderful rhyming text and cozy illustrations make it a perfect story for reading aloud, especially on a chilly day." },
+            { month: 6, title: "Over in the Meadow", author: "Olive A. Wadsworth", type: "Rhyme", summary: "A classic counting rhyme set in a meadow, where various animal mothers and their babies are introduced from one to ten.", acclaim: "A timeless folk song and poem. This version introduces counting and animal families in a gentle, rhythmic way that is soothing and educational." },
+            { month: 6, title: "A You're Adorable", author: "Martha Alexander", type: "Rhyme", summary: "This book brings the classic alphabet song to life, with a little boy showing his affection for a little girl using each letter of the alphabet.", acclaim: "A sweet and charming book. It's a loving way to introduce the alphabet, associating each letter with words of affection." },
+            { month: 6, title: "In the Tall, Tall Grass", author: "Denise Fleming", type: "Visual", summary: "A caterpillar crawls through the tall grass, observing all the insects and animals that crunch, munch, zip, and sip around him.", acclaim: "A Caldecott Honor book. Its rhythmic text is full of fun sounds (onomatopoeia), and its vibrant illustrations provide a rich visual experience of a tiny world." },
+            { month: 6, title: "Belly Button Book!", author: "Sandra Boynton", type: "Concept", summary: "A cheerful hippo proudly shows off his belly button, leading to a silly and enthusiastic celebration of this feature.", acclaim: "A hugely popular Boynton board book. It's a fun and lighthearted way to teach body parts and encourage self-acceptance and humor." },
+            { month: 6, title: "I Love You Stinky Face", author: "Lisa McCourt", type: "Emotional", summary: "A little boy tests his mother's unconditional love by asking if she would still love him if he were a series of smelly, scary, and strange creatures.", acclaim: "A heartwarming bestseller. It's a powerful and reassuring story that communicates the message of unconditional love in a humorous and imaginative way." },
+            { month: 6, title: "What Will Fat Cat Sit On?", author: "Jan Thomas", type: "Humor", summary: "A group of animals panics when they see a fat cat looking for a place to sit. The simple, repetitive text builds to a funny conclusion.", acclaim: "Praised for its bold, simple illustrations and hilarious, easy-to-follow plot. It's great for teaching prediction and sequence." },
+            { month: 6, title: "Little Cloud", author: "Eric Carle", type: "Classic", summary: "A little cloud drifts away from the others and changes into various shapes—a sheep, an airplane, a shark—before rejoining his friends to make it rain.", acclaim: "A classic from Eric Carle. It encourages imagination and observation of the natural world, showing how shapes can transform." },
+            { month: 6, title: "Duck & Goose", author: "Tad Hills", type: "Classic", summary: "Duck and Goose both find a big egg and believe it belongs to them. They learn to work together to care for it, only to be surprised by what hatches.", acclaim: "A \"New York Times\" bestselling series. It's a charming story about friendship, sharing, and problem-solving with adorable characters." },
+            { month: 6, title: "Who Said Moo?", author: "Harriet Ziefert", type: "Interactive", summary: "A little red rooster is woken up by a \"moo\" and goes around the farm trying to find out who made the sound.", acclaim: "A fun, interactive story. It teaches animal sounds and encourages participation as the baby can help guess which animal is next." },
+            { month: 7, title: "Whose Toes are Those?", author: "Jabari Asim", type: "Interactive", summary: "A playful, rhyming book that celebrates a baby's adorable toes in a loving game of peekaboo.", acclaim: "Praised for its joyful tone and positive representation. It's a wonderful interactive book for cuddling and bonding with a baby." },
+            { month: 7, title: "Bear Sees Colors", author: "Karma Wilson", type: "Concept", summary: "Bear and his friends go for a walk and discover all the beautiful colors of the world around them, from green grass to a blue stream.", acclaim: "Part of the bestselling *Bear* series. It's a lovely way to introduce color recognition within a gentle, rhyming narrative about friendship and nature." },
+            { month: 7, title: "I Like Myself!", author: "Karen Beaumont", type: "Emotional", summary: "A little girl celebrates everything about herself in a joyful, rhyming declaration of self-love and confidence.", acclaim: "An award-winning book with a powerful message. It's never too early to introduce the concept of self-esteem, and this book does it in a fun and exuberant way." },
+            { month: 7, title: "The Watermelon Seed", author: "Greg Pizzoli", type: "Humor", summary: "A crocodile loves watermelon but has a terrible fear of swallowing a seed and having a watermelon plant grow in his belly.", acclaim: "Winner of the Theodor Seuss Geisel Honor. It's a hilarious and relatable story about a silly fear, with bold, graphic illustrations that appeal to young readers." },
+            { month: 7, title: "Time for a Hug", author: "Phillis Gershator", type: "Emotional", summary: "This sweet, rhyming story follows a little bunny through his day, showing that any time is the right time for a hug.", acclaim: "A comforting and affectionate book. It reinforces the importance of love and physical affection throughout the day, strengthening a baby's sense of security." },
+            { month: 7, title: "If You Give a Moose a Muffin", author: "Laura Numeroff", type: "Classic", summary: "A boy gives a moose a muffin, setting off a chain reaction of comical requests and events.", acclaim: "A classic from the bestselling \"If You Give...\" series. It's a fun and silly introduction to the concept of cause and effect, with an engaging circular plot." },
+            { month: 7, title: "Press Here", author: "Hervé Tullet", type: "Interactive", summary: "An interactive book that invites the reader to press dots, shake the pages, and tilt the book to see how the dots on the page react.", acclaim: "A \"New York Times\" bestseller and a modern classic. It's a brilliantly simple and imaginative book that teaches cause and effect without any batteries or screens, showing the magic of a physical book." },
+            { month: 7, title: "Little Owl Lost", author: "Chris Haughton", type: "Classic", summary: "A little owl falls out of his nest and, with the help of a friendly squirrel, tries to find his mommy.", acclaim: "An award-winning book praised for its stunning, stylized illustrations and heartwarming story. It gently addresses separation anxiety in a reassuring way." },
+            { month: 7, title: "Big Fat Hen", author: "Keith Baker", type: "Rhyme", summary: "This book illustrates the classic \"One, Two, Buckle My Shoe\" nursery rhyme with a big fat hen and her colorful eggs.", acclaim: "Praised for its vibrant, detailed illustrations. It's a beautiful and engaging way to teach counting and introduce a classic rhyme." },
+            { month: 7, title: "Giraffes Can't Dance", author: "Giles Andreae", type: "Classic", summary: "Gerald the giraffe wants to dance at the Jungle Dance, but everyone tells him he can't. With encouragement from a friendly cricket, he finds his own unique rhythm.", acclaim: "An international bestseller. It's a wonderful story about self-confidence, celebrating differences, and the importance of finding your own song." },
+            { month: 8, title: "Caps for Sale", author: "Esphyr Slobodkina", type: "Classic", summary: "A peddler who balances a tall stack of caps on his head takes a nap under a tree, only to wake up and find a troop of monkeys has stolen them.", acclaim: "A timeless classic that has been loved for generations. Its repetitive structure and humorous plot make it a captivating read-aloud." },
+            { month: 8, title: "Goodnight, Goodnight, Construction Site", author: "Sherri Duskey Rinker", type: "Classic", summary: "As the sun sets, all the hardworking trucks at the construction site, from the crane to the cement mixer, get ready for bed.", acclaim: "A #1 \"New York Times\" bestseller. It's a perfect bedtime story for little ones who love trucks, with a calming, rhyming text that winds down the day." },
+            { month: 8, title: "Pajama Time!", author: "Sandra Boynton", type: "Rhyme", summary: "A host of silly animals gets ready for bed in a jubilant, sing-song celebration of putting on pajamas.", acclaim: "Another Boynton bestseller. It turns the routine of getting ready for bed into a fun and energetic dance party, making it a positive experience." },
+            { month: 8, title: "Good Morning, Farm Friends", author: "Annie Bach", type: "Classic", summary: "A simple, cheerful book that follows a little girl as she wakes up and greets all the animals on her farm.", acclaim: "Praised for its sweet, simple text and charming illustrations. It's a lovely book for starting the day, teaching animal sounds and morning routines." },
+            { month: 8, title: "The Water Hole", author: "Graeme Base", type: "Visual", summary: "A beautifully illustrated counting book where animals from all over the world gather at a water hole, which slowly shrinks with each page turn.", acclaim: "From a renowned author-illustrator. The stunning, detailed illustrations are full of hidden creatures, making it a book that can be explored over and over again." },
+            { month: 8, title: "Monkey and Me", author: "Emily Gravett", type: "Interactive", summary: "A little girl and her toy monkey go to the zoo and imitate all the animals they see, from waddling penguins to jumping kangaroos.", acclaim: "An award-winning book. Its repetitive, predictive text and focus on actions make it a fun, interactive read that encourages movement." },
+            { month: 8, title: "Bunny Roo, I Love You", author: "Melissa Marr", type: "Emotional", summary: "A beautiful and reassuring story that compares a mother's love for her child to the way different animal mothers care for their babies.", acclaim: "A heartwarming and lyrical book. It's a wonderful way to express love and affection, with gentle, soothing illustrations." },
+            { month: 8, title: "Steam Train, Dream Train", author: "Sherri Duskey Rinker", type: "Classic", summary: "The companion to *Construction Site*, this book features a dream train being loaded up by a crew of animal workers with all sorts of fun cargo.", acclaim: "Another #1 \"New York Times\" bestseller. Its rhyming text and magical, dreamy atmosphere make it a perfect bedtime story for train lovers." },
+            { month: 8, title: "Kitten's First Full Moon", author: "Kevin Henkes", type: "Classic", summary: "A little kitten sees her first full moon and thinks it's a bowl of milk in the sky. She spends the night trying to reach it.", acclaim: "Winner of the prestigious Caldecott Medal. Its beautiful, simple, black-and-white illustrations and gentle story of perseverance are perfect for young readers." },
+            { month: 8, title: "The Carrot Seed", author: "Ruth Krauss", type: "Classic", summary: "A little boy plants a carrot seed and cares for it, even though everyone tells him it won't come up. He patiently persists, and his faith is rewarded.", acclaim: "A classic since 1945. It's a simple but powerful story about patience, perseverance, and believing in yourself." },
+            { month: 9, title: "The Very Noisy Night", author: "Diana Hendry", type: "Emotional", summary: "Little Mouse is trying to sleep, but he keeps hearing scary noises outside. Big Mouse reassures him by explaining the real, non-scary sources of the sounds.", acclaim: "A comforting story that addresses common nighttime fears in a gentle and reassuring way, with a sweet and loving message." },
+            { month: 9, title: "Click, Clack, Moo: Cows That Type", author: "Doreen Cronin", type: "Humor", summary: "Farmer Brown's cows find an old typewriter and start leaving him typed notes with demands, leading to a hilarious barnyard negotiation.", acclaim: "A Caldecott Honor book. It's a brilliantly funny story about communication and problem-solving that is a joy to read aloud." },
+            { month: 9, title: "I'm Not Cute!", author: "Jonathan Allen", type: "Humor", summary: "A little owl is tired of all the other animals telling him how cute he is. He insists he is a \"huge and scary hunting machine.\"", acclaim: "A humorous and relatable story for any child who has ever been called \"cute.\" It's a funny take on how little ones see themselves." },
+            { month: 9, title: "Quick as a Cricket", author: "Audrey Wood", type: "Emotional", summary: "A child describes their many different feelings and characteristics by comparing themselves to various animals, from being \"quick as a cricket\" to \"sad as a basset.\"", acclaim: "A classic book for social-emotional learning. It's a wonderful way to introduce the idea that it's okay to have many different feelings." },
+            { month: 9, title: "Whose Nose and Toes?", author: "John Butler", type: "Interactive", summary: "A lift-the-flap book that gives little clues about an animal before revealing the full picture under the flap.", acclaim: "Praised for its beautiful, realistic illustrations. It's an engaging guessing game that helps babies with animal recognition and prediction skills." },
+            { month: 9, title: "Hooray for Fish!", author: "Lucy Cousins", type: "Visual", summary: "A little fish swims through the ocean, introducing the reader to all his fish friends, who come in every shape, size, and color imaginable.", acclaim: "From the creator of Maisy. Its vibrant, colorful illustrations and simple, rhyming text make it a joyful celebration of diversity." },
+            { month: 9, title: "Bear Wants More", author: "Karma Wilson", type: "Classic", summary: "Bear wakes up from his long winter sleep very hungry. He and his friends go on a search for food to fill his empty tummy.", acclaim: "Another bestseller in the *Bear* series. It's a sweet story about friendship and sharing, with a fun, repetitive refrain that babies will enjoy." },
+            { month: 9, title: "The Pigeon Has to Go to School!", author: "Mo Willems", type: "Humor", summary: "The beloved Pigeon is very worried about going to school, listing all the reasons he shouldn't have to go in his classic, comical style.", acclaim: "A #1 \"New York Times\" bestseller. Mo Willems is a master of capturing toddler emotions, and this book hilariously addresses the anxiety of starting something new." },
+            { month: 9, title: "Little Quack", author: "Lauren Thompson", type: "Emotional", summary: "Little Quack is the last of his siblings to be brave enough to jump into the pond and swim with Mama Duck.", acclaim: "A popular and reassuring story. It gently deals with feelings of hesitation and the courage it takes to try something new, with a sweet countdown format." },
+            { month: 9, title: "Pouch!", author: "David Ezra Stein", type: "Emotional", summary: "A little kangaroo named Joey is ready to explore the world, but he keeps hopping right back into the safety of his mama's pouch.", acclaim: "An award-winning book. It's a charming and relatable story about the back-and-forth steps of growing independence and the security of a parent's love." },
+            { month: 10, title: "The Very Busy Spider", author: "Eric Carle", type: "Sensory", summary: "A spider is busy spinning her web and doesn't have time to play with the other farm animals. The web is raised on the page so it can be felt.", acclaim: "A multi-sensory classic. The tactile element of the raised web is fascinating for babies, and the story gently teaches about focus and hard work." },
+            { month: 10, title: "How Do Dinosaurs Say Good Night?", author: "Jane Yolen", type: "Humor", summary: "This humorous book shows giant dinosaurs acting like toddlers at bedtime—slamming doors and demanding one more story—before settling down.", acclaim: "A #1 \"New York Times\" bestseller that launched a huge series. It cleverly teaches good bedtime behavior by showing the opposite in a funny, exaggerated way." },
+            { month: 10, title: "Penguin and Pinecone", author: "Salina Yoon", type: "Emotional", summary: "A penguin finds a pinecone and they become friends. When Penguin learns that pinecones don't belong in the snow, he takes his friend on a long journey home.", acclaim: "An award-winning book with a sweet message. It's a beautiful and gentle story about friendship, empathy, and doing the right thing." },
+            { month: 10, title: "Sleepy, the Goodnight Buddy", author: "Drew Daywalt", type: "Humor", summary: "A little boy needs his \"goodnight buddy\" toy to fall asleep, but the toy itself is wide awake and wants to party.", acclaim: "From the author of *The Day the Crayons Quit*. It's a hilarious reversal of the typical bedtime story that will make both parents and children laugh." },
+            { month: 10, title: "Snow", author: "Uri Shulevitz", type: "Visual", summary: "A gray city is slowly transformed into a magical, white wonderland by a gentle snowfall, as a little boy and his dog watch with delight.", acclaim: "A Caldecott Honor book. Told with very few words, its beautiful illustrations capture the quiet wonder and magic of a snowy day." },
+            { month: 10, title: "Thank You Bear", author: "Greg Foley", type: "Emotional", summary: "Bear finds a little box and thinks it would be the perfect gift for his friend Mouse, but everyone he meets on the way has a different, grander idea.", acclaim: "A simple and profound story. It teaches a valuable lesson about listening to your own heart and the simple power of a thoughtful gift." },
+            { month: 10, title: "All the World", author: "Liz Garton Scanlon", type: "Classic", summary: "A beautiful, lyrical book that follows a family and their community through the course of a day, showing the connections between all people and the natural world.", acclaim: "A Caldecott Honor book. Its sweeping, poetic text and stunning illustrations convey a powerful message of interconnectedness and peace." },
+            { month: 10, title: "I'm the Biggest Thing in the Ocean", author: "Kevin Sherry", type: "Humor", summary: "A giant squid proudly declares he is the biggest thing in the ocean, until he gets swallowed by a whale.", acclaim: "A hilarious and visually bold book. It's a funny story about perspective, with a surprise ending that will delight young children." },
+            { month: 10, title: "Rain", author: "Linda Ashman", type: "Emotional", summary: "A little boy is grumpy about the rain, while a little girl is delighted by it. The story shows how a simple act of kindness can change someone's perspective.", acclaim: "Praised for its sweet story and charming illustrations. It's a gentle lesson in empathy and the power of a positive attitude." },
+            { month: 10, title: "Bear Feels Sick", author: "Karma Wilson", type: "Emotional", summary: "Bear is too sick to play, so his loyal friends gather around to take care of him until he feels better.", acclaim: "Another beloved book in the *Bear* series. It's a comforting story about what it means to be a good friend and how to care for others when they are not feeling well." },
+            { month: 11, title: "The Seals on the Bus", author: "Lenny Hort", type: "Rhyme", summary: "A fun twist on the classic song \"The Wheels on the Bus,\" where the bus is filled with noisy animals like seals, tigers, and geese.", acclaim: "A popular and energetic read-aloud. It encourages singing and making animal sounds, which is great for language development and interactive fun." },
+            { month: 11, title: "Duck in the Truck", author: "Jez Alborough", type: "Rhyme", summary: "Duck's truck gets stuck in the muck, and he needs help from his farm animal friends to get it out.", acclaim: "An award-winning book known for its brilliant rhyming text and humorous, expressive illustrations. It's a fun story about teamwork and problem-solving." },
+            { month: 11, title: "Pete the Cat: I Love My White Shoes", author: "Eric Litwin", type: "Classic", summary: "Pete the Cat walks down the street in his new white shoes, stepping in various things that change their color. But no matter what, Pete keeps singing his song.", acclaim: "A #1 \"New York Times\" bestseller that launched a phenomenon. It's a fantastic story about resilience and keeping a positive attitude, with a catchy, repetitive song." },
+            { month: 11, title: "Pat the Bunny", author: "Dorothy Kunhardt", type: "Sensory", summary: "One of the first interactive books ever made, it invites the reader to \"pat the bunny,\" play peekaboo, and feel daddy's scratchy beard.", acclaim: "A classic for over 80 years. Its significance is in its pioneering multi-sensory approach to reading, engaging a baby's sense of touch, sight, and even smell." },
+            { month: 11, title: "Maisy's First Numbers", author: "Lucy Cousins", type: "Vocabulary", summary: "A simple counting book featuring the beloved character Maisy Mouse, with clear illustrations of objects to count from one to ten.", acclaim: "Part of the globally successful Maisy series. It's a cheerful and effective way to introduce numbers and counting with a familiar, friendly character." },
+            { month: 11, title: "Grumpy Bird", author: "Jeremy Tankard", type: "Emotional", summary: "Bird wakes up feeling grumpy, but as he goes for a walk and his friends join him, their company and some movement help him shake off his bad mood.", acclaim: "A popular and relatable story. It's a great book for social-emotional learning, showing that it's okay to feel grumpy and that friends and exercise can help." },
+            { month: 11, title: "A Rainbow of My Own", author: "Don Freeman", type: "Classic", summary: "A little boy imagines what it would be like to have his own rainbow to play with, and then finds a beautiful reflection of one in his house after the rain.", acclaim: "From the author of *Corduroy*. It's a sweet and imaginative story that captures the wonder of childhood and the beauty of the natural world." },
+            { month: 11, title: "Where's My Teddy?", author: "Jez Alborough", type: "Classic", summary: "A little boy named Eddie loses his teddy bear in the woods and finds a giant one, while a giant bear finds Eddie's little one.", acclaim: "A beloved classic with a clever, rhyming plot. It's a funny and reassuring story about losing a beloved object and the comfort of being reunited." },
+            { month: 11, title: "The Whale in My Swimming Pool", author: "Joyce Wan", type: "Humor", summary: "A little boy is ready to go for a swim, but there's a big whale in his pool who won't get out. He tries everything to solve the problem.", acclaim: "A humorous and imaginative story. Its bold, cute illustrations and silly premise make it a fun read that encourages creative problem-solving." },
+            { month: 11, title: "Little Excavator", author: "Anna Dewdney", type: "Classic", summary: "The Little Excavator wants to help the big trucks at the construction site, but he's too small for their jobs. Finally, he finds the perfect task that only he can do.", acclaim: "From the author of the *Llama Llama* series. It's a sweet and empowering story about finding your own special role and contributing to a team, no matter your size." }
+        ];
+
+        const monthNavigation = document.getElementById('month-navigation');
+        const monthTitle = document.getElementById('month-title');
+        const bookGrid = document.getElementById('book-grid');
+        const modal = document.getElementById('book-modal');
+        const closeModalButton = document.getElementById('close-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalAuthor = document.getElementById('modal-author');
+        const modalSummary = document.getElementById('modal-summary');
+        const modalAcclaim = document.getElementById('modal-acclaim');
+        
+        let currentMonth = 0;
+        let chart;
+
+        const monthNames = [
+            "Month 0: The Newborn Library", "Month 1: Exploring Sounds and Sights", "Month 2: Faces and First Interactions",
+            "Month 3: Rhyme, Rhythm, and Routines", "Month 4: Touch, Feel, and Affection", "Month 5: Classic Characters and Concepts",
+            "Month 6: Animal Adventures and Affection", "Month 7: Curiosity and Classic Tales", "Month 8: Routines and Reassurance",
+            "Month 9: Humor and Imagination", "Month 10: Exploring the World", "Month 11: Music, Movement, and Make-Believe"
+        ];
+
+        function renderNavigation() {
+            monthNames.forEach((name, index) => {
+                const button = document.createElement('button');
+                button.textContent = `Month ${index}`;
+                button.classList.add('nav-button', 'px-3', 'py-1', 'sm:px-4', 'sm:py-2', 'rounded-full', 'text-sm', 'sm:text-base', 'font-semibold', 'text-teal-800', 'bg-white', 'hover:bg-teal-100', 'transition-all', 'duration-200', 'shadow-sm');
+                if (index === currentMonth) {
+                    button.classList.add('active');
+                }
+                button.addEventListener('click', () => {
+                    currentMonth = index;
+                    renderContent();
+                    updateActiveButton();
+                });
+                monthNavigation.appendChild(button);
+            });
+        }
+
+        function updateActiveButton() {
+            const buttons = document.querySelectorAll('.nav-button');
+            buttons.forEach((button, index) => {
+                if (index === currentMonth) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+        }
+
+        function renderContent() {
+            monthTitle.textContent = monthNames[currentMonth];
+            bookGrid.innerHTML = '';
+            const booksForMonth = bookData.filter(book => book.month === currentMonth);
+
+            booksForMonth.forEach(book => {
+                const card = document.createElement('div');
+                card.className = 'bg-amber-50 rounded-lg p-3 text-center cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105';
+                card.innerHTML = `
+                    <div class="aspect-square bg-teal-100 rounded-md flex items-center justify-center mb-2">
+                        <span class="text-4xl">📖</span>
+                    </div>
+                    <h4 class="font-bold text-sm text-teal-900 truncate">${book.title}</h4>
+                    <p class="text-xs text-stone-500 truncate">${book.author}</p>
+                `;
+                card.addEventListener('click', () => showModal(book));
+                bookGrid.appendChild(card);
+            });
+            updateChart(currentMonth);
+        }
+
+        function showModal(book) {
+            modalTitle.textContent = book.title;
+            modalAuthor.textContent = book.author;
+            modalSummary.innerHTML = `<p>${book.summary}</p>`;
+            modalAcclaim.innerHTML = `<p>${book.acclaim}</p>`;
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.remove('scale-95');
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.add('scale-95');
+        }
+
+        function updateChart(month) {
+            const booksForMonth = bookData.filter(book => book.month === month);
+            const typeCounts = booksForMonth.reduce((acc, book) => {
+                acc[book.type] = (acc[book.type] || 0) + 1;
+                return acc;
+            }, {});
+
+            const labels = Object.keys(typeCounts);
+            const data = Object.values(typeCounts);
+
+            if (chart) {
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = data;
+                chart.update();
+            } else {
+                const ctx = document.getElementById('book-type-chart').getContext('2d');
+                chart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Book Types',
+                            data: data,
+                            backgroundColor: [
+                                'rgba(15, 118, 110, 0.8)', // teal-800
+                                'rgba(20, 184, 166, 0.8)', // teal-500
+                                'rgba(245, 158, 11, 0.8)',  // amber-500
+                                'rgba(120, 113, 108, 0.8)', // stone-500
+                                'rgba(240, 171, 252, 0.8)',// fuchsia-300
+                                'rgba(107, 114, 128, 0.8)', // gray-500
+                                'rgba(251, 113, 133, 0.8)' // rose-400
+                            ],
+                            borderColor: '#fdfbf7',
+                            borderWidth: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: {
+                                        family: "'Inter', sans-serif",
+                                        size: 12
+                                    },
+                                    color: '#4a4a4a',
+                                    padding: 15
+                                }
+                            },
+                            tooltip: {
+                                bodyFont: {
+                                    family: "'Inter', sans-serif"
+                                },
+                                titleFont: {
+                                    family: "'Inter', sans-serif"
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        closeModalButton.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape") {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNavigation();
+            renderContent();
+        });
+    </script>
+</body>
+</html>
